@@ -1,19 +1,24 @@
 #include "LindaHandle.hpp"
 #include "LindaServer.hpp"
+#include "LindaTuple.hpp"
 
+#include <functional>
 #include <iostream>
-#include <unistd.h>
-#include <vector>
+#include <string>
 
-void worker(linda::LindaHandle handle) {
-    char message1[] = "Hello!";
-    char message2[] = "This is an example!";
-    write(handle.out_pipe, message1, sizeof(message1));
-    write(handle.out_pipe, message2, sizeof(message2));
+void worker1(linda::Handle handle) {
+    std::string  message("Hello example!");
+    linda::Tuple t = linda::Tuple::Builder().String(message).build();
+    handle.out(t);
+}
+
+void worker2(linda::Handle handle) {
+    linda::TuplePattern p = linda::TuplePattern::Builder().anyString().build();
+    std::cout << std::get<std::string>(handle.read(p)->values()[0]) << std::endl;
 }
 
 int main() {
-    auto ls = linda::LindaServer(std::vector({std::function(worker)}));
+    auto ls = linda::Server(std::vector({std::function(worker1), std::function(worker2)}));
     ls.start();
     return 0;
 }

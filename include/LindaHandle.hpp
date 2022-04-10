@@ -1,18 +1,24 @@
 #pragma once
 
-namespace linda {
+#include "LindaTuple.hpp"
 
-class Handle {
-public:
-  Handle(int in, int out);
+#include <optional>
 
-  void in();
-  void out();
-  void read();
+namespace linda
+{
 
-private:
-  int in_pipe;
-  int out_pipe;
+class Handle
+{
+  public:
+    Handle(int in, int out);
+
+    std::optional<Tuple> read(TuplePattern &pattern, int timeout_ms = 0);
+    std::optional<Tuple> in(TuplePattern &pattern, int timeout_ms = 0);
+    void                 out(Tuple &tuple);
+
+  private:
+    int in_pipe_;
+    int out_pipe_;
 };
 
 } // namespace linda

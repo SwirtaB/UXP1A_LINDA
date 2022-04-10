@@ -5,23 +5,30 @@
 #include <functional>
 #include <vector>
 
-namespace linda {
+namespace linda
+{
 
-class Server {
-public:
-  Server(const std::vector<std::function<void(Handle)>> workers);
+class Server
+{
+  public:
+    Server(const std::vector<std::function<void(Handle)>> workers);
 
-  int start();
+    int start();
 
-private:
-  struct WorkerHandle {
-    int in_pipe;
-    int out_pipe;
-  };
+  private:
+    struct WorkerHandle
+    {
+        int in_pipe;
+        int out_pipe;
+    };
 
-  const std::vector<std::function<void(Handle)>> workers_;
-  std::vector<WorkerHandle> worker_handles;
+    const std::vector<std::function<void(Handle)>> workers_;
+    std::vector<WorkerHandle>                      worker_handles;
 
+    void spawnWorkers();
+    void collectRequests();
+    bool completeRequest();
+    void waitForRequests();
 };
 
 } // namespace linda
