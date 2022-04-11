@@ -1,9 +1,10 @@
 #pragma once
 
+#include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
+#include "LindaTupleSpace.hpp"
 
-#include <functional>
-#include <vector>
+#include <unordered_map>
 
 namespace linda
 {
@@ -23,12 +24,23 @@ class Server
     };
 
     const std::vector<std::function<void(Handle)>> workers_;
-    std::vector<WorkerHandle>                      worker_handles;
+    std::unordered_map<int, WorkerHandle>          worker_handles_;
+    std::vector<std::pair<int, Request>>           requests_;
+    std::unordered_map<int, long long>             timeouts_;
+    std::chrono::steady_clock                      monotonic_clock_;
+    TupleSpace tuple_space_;
 
-    void spawnWorkers();
-    void collectRequests();
-    bool completeRequest();
-    void waitForRequests();
+    void             spawnWorkers();
+    std::vector<int> waitForRequests();
+    void             collectRequests(std::vector<int> &ready);
+    bool             completeRequest();
+    void             timeoutRequests();
+
+    long long getNowMs();
+    void      insertTimeout(int fd, int timeout_ms);
+    int       findEarliestTimeout();
+
+    void answerRequest(int fd, Response &response);
 };
 
 } // namespace linda
