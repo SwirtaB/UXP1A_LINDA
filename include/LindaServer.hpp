@@ -28,7 +28,7 @@ class Server
     std::vector<std::pair<int, Request>>           requests_;
     std::unordered_map<int, long long>             timeouts_;
     std::chrono::steady_clock                      monotonic_clock_;
-    TupleSpace tuple_space_;
+    TupleSpace                                     tuple_space_;
 
     void             spawnWorkers();
     std::vector<int> waitForRequests();

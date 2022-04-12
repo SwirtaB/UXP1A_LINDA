@@ -1,7 +1,7 @@
-#include "../include/LindaServer.hpp"
+#include "LindaServer.hpp"
 
-#include "../include/LindaHandle.hpp"
 #include "LindaCommand.hpp"
+#include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
 
 #include <algorithm>
@@ -29,14 +29,15 @@ int Server::start() {
         auto ready = waitForRequests();
         if (ready.size() > 0) {
             collectRequests(ready);
-            while (completeRequest()) {}
+            do {
+                timeoutRequests();
+            } while (completeRequest());
         }
-        timeoutRequests();
     }
 }
 
 void Server::spawnWorkers() {
-    for (auto worker : workers_) {
+    for (auto &worker : workers_) {
         int in_pipe[2];
         int in_pipe_res = pipe(in_pipe);
         if (in_pipe_res != 0) {
@@ -61,9 +62,9 @@ void Server::spawnWorkers() {
 }
 
 void Server::collectRequests(std::vector<int> &ready) {
-    for (auto fd : ready) {
+    for (int fd : ready) {
         Request request = Request::receive(fd);
-        requests_.emplace_back(request);
+        requests_.emplace_back(fd, request);
         insertTimeout(fd, request.getTimeout());
     }
 }
@@ -76,7 +77,7 @@ bool Server::completeRequest() {
             tuple_space_.put(t);
             return true;
         } else if (request.second.getType() == RequestType::Read) {
-            TuplePattern tp = request.second.getTuplePattern();
+            TuplePattern         tp  = request.second.getTuplePattern();
             std::optional<Tuple> get = tuple_space_.get(tp);
             if (get.has_value()) {
                 Response r = Response::Result(get.value());
@@ -84,14 +85,15 @@ bool Server::completeRequest() {
                 return true;
             }
         } else if (request.second.getType() == RequestType::In) {
-            TuplePattern tp = request.second.getTuplePattern();
+            TuplePattern         tp      = request.second.getTuplePattern();
             std::optional<Tuple> consume = tuple_space_.consume(tp);
             if (consume.has_value()) {
                 Response r = Response::Result(consume.value());
                 answerRequest(request.first, r);
                 return true;
             }
-            break;
+        } else {
+            throw "unreachable";
         }
     }
     return false;
@@ -99,14 +101,14 @@ bool Server::completeRequest() {
 
 void Server::timeoutRequests() {
     std::vector<int> timed_out;
-    long long now = getNowMs();
+    long long        now = getNowMs();
 
-    for (auto timeout : timeouts_) {
+    for (auto &timeout : timeouts_) {
         if (timeout.second <= now) {
             timed_out.emplace_back(timeout.first);
         }
     }
-    for (auto fd : timed_out) {
+    for (int fd : timed_out) {
         Response r = Response::Timeout();
         answerRequest(fd, r);
     }
@@ -114,19 +116,19 @@ void Server::timeoutRequests() {
 
 std::vector<int> Server::waitForRequests() {
     std::vector<pollfd> pollfds;
-    for (auto wh : worker_handles_) {
+    for (auto &wh : worker_handles_) {
         pollfd pfd;
         pfd.fd     = wh.second.in_pipe;
         pfd.events = POLLIN;
-        pollfds.push_back(pfd);
+        pollfds.emplace_back(pfd);
     }
     int timeout = findEarliestTimeout();
     poll(pollfds.data(), pollfds.size(), timeout);
 
     std::vector<int> ready;
-    for (auto pfd : pollfds) {
+    for (pollfd pfd : pollfds) {
         if (pfd.revents & POLLIN) {
-            ready.push_back(pfd.fd);
+            ready.emplace_back(pfd.fd);
         }
     }
 
@@ -148,7 +150,7 @@ void Server::insertTimeout(int fd, int timeout_ms) {
 
 int Server::findEarliestTimeout() {
     long long earliest = LONG_LONG_MAX;
-    for (auto timeout : timeouts_) {
+    for (auto &timeout : timeouts_) {
         if (timeout.second < earliest) {
             earliest = timeout.second;
         }

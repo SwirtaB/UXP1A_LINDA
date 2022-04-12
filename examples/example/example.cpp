@@ -7,8 +7,7 @@
 #include <string>
 
 void worker1(linda::Handle handle) {
-    std::string  message("Hello example!");
-    linda::Tuple t = linda::Tuple::Builder().String(message).build();
+    linda::Tuple t = linda::Tuple::Builder().String("Hello example!").build();
     handle.out(t);
 }
 

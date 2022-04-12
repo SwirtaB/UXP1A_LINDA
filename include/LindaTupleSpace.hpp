@@ -17,6 +17,6 @@ class TupleSpace
     void                 put(Tuple &tuple);
 
   private:
-    std::unordered_map<std::vector<TupleType>, std::vector<Tuple>> space_;
+    std::unordered_map<std::string, std::vector<Tuple>> space_;
 };
 } // namespace linda

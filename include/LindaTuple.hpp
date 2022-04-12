@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -16,9 +17,37 @@ enum class TupleType : char
 
 typedef std::variant<std::string, int, float> TupleValue;
 
-typedef std::variant<TupleValue, std::monostate> TupleRequirement;
+typedef std::optional<TupleValue> TupleRequirement;
 
-class Tuple;
+class Tuple
+{
+  public:
+    class Builder
+    {
+      public:
+        Builder();
+
+        Builder &String(std::string &&s);
+        Builder &Int(int i);
+        Builder &Float(float f);
+
+        Tuple build();
+
+      private:
+        std::string             schema_;
+        std::vector<TupleValue> values_;
+    };
+
+    const std::string             &schema();
+    const std::vector<TupleValue> &values();
+
+    std::vector<char> serialize();
+    static Tuple      deserialize(const std::vector<char> &data);
+
+  private:
+    std::string             schema_;
+    std::vector<TupleValue> values_;
+};
 
 class TuplePattern
 {
@@ -29,7 +58,7 @@ class TuplePattern
         Builder();
 
         Builder &anyString();
-        Builder &stringOf(std::string &s);
+        Builder &stringOf(std::string &&s);
         Builder &anyInt();
         Builder &intOf(int i);
         Builder &anyFloat();
@@ -38,49 +67,19 @@ class TuplePattern
         TuplePattern build();
 
       private:
-        std::vector<TupleType>        schema_;
-        std::vector<TupleRequirement> patterns_;
+        std::string                   schema_;
+        std::vector<TupleRequirement> requirements_;
     };
 
-    const std::vector<TupleType> &schema();
-    bool                          matches(Tuple &tuple);
+    const std::string &schema();
+    bool               matches(Tuple &tuple);
 
     std::vector<char>   serialize();
     static TuplePattern deserialize(std::vector<char> &data);
 
   private:
-    std::vector<TupleType>        schema_;
+    std::string                   schema_;
     std::vector<TupleRequirement> requirements_;
-};
-
-class Tuple
-{
-  public:
-    class Builder
-    {
-      public:
-        Builder();
-
-        Builder &String(std::string &s);
-        Builder &Int(int i);
-        Builder &Float(float f);
-
-        Tuple build();
-
-      private:
-        std::vector<TupleType>  schema_;
-        std::vector<TupleValue> values_;
-    };
-
-    const std::vector<TupleType>  &schema();
-    const std::vector<TupleValue> &values();
-
-    std::vector<char> serialize();
-    static Tuple      deserialize(std::vector<char> &data);
-
-  private:
-    std::vector<TupleType>  schema_;
-    std::vector<TupleValue> values_;
 };
 
 } // namespace linda

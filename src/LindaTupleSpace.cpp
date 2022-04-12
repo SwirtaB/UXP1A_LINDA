@@ -1,4 +1,4 @@
-#include "../include/LindaTupleSpace.hpp"
+#include "LindaTupleSpace.hpp"
 
 #include "LindaTuple.hpp"
 
@@ -33,9 +33,9 @@ std::optional<Tuple> TupleSpace::consume(TuplePattern &pattern) {
 
 void TupleSpace::put(Tuple &tuple) {
     if (!space_.count(tuple.schema())) {
-        space_.emplace(tuple.schema());
+        space_.emplace(tuple.schema(), std::vector<Tuple>());
     }
-    space_.at(tuple.schema()).push_back(tuple);
+    space_.at(tuple.schema()).emplace_back(tuple);
 }
 
 } // namespace linda

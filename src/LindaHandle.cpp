@@ -1,6 +1,6 @@
-#include "../include/LindaHandle.hpp"
+#include "LindaHandle.hpp"
 
-#include "../include/LindaCommand.hpp"
+#include "LindaCommand.hpp"
 
 #include <iostream>
 #include <optional>
