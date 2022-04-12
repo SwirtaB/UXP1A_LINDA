@@ -6,7 +6,7 @@
 * Górniak Daniel
 * Zieliński Jakub
 
-Data przekazania dokuemntacji wstępnej: dd.mm.rrrr
+Data przekazania dokumentacji wstępnej: dd.mm.rrrr
 
 ## Temat projektu
 <p align="justify">
@@ -54,12 +54,12 @@ Przyjmujemy następujące założenia:
 ## Opis funkcjonalny
 ### Ujęcie ogólne
 Użytkownikowi biblioteki udostępnione są poniższe funkcjonalności:
-* utworzenie instancji obiektu, który realizuje wieloprocesowy dostęp do przestrzeni krotek
+* utworzenie instancji obiektu, który realizuje przestrzeń krotek i koordynuje wieloprocesowy dostęp do tej przestrzeni
 * uruchomienie systemu komunikacji
 * dokonywanie operacji zdefiniowanych przez język Linda:
     * wstawienie krotki do przestrzeni
     * odczytanie krotki z przestrzeni
-    * odczytanie i usinięcie krotki z przestrzeni
+    * atomowe odczytanie i usunięcie krotki z przestrzeni
 
 ### linda::Server
 <p align="justify">
@@ -93,30 +93,78 @@ void function(linda::Handle handle) {
 ```
 
 ### Struktury
-Reprezentację danych podajemy w formie struktur języka C. Nie muszą one odzwierciedlać faktycznej implementacji (np. przedstawiona struktora mogła zostać zaimplementowana jako klasa), a służą jedynie zarysowaniu ogólnej koncepcji organizacji danych i struktury komunikatów.
+![tuple](/reports/figures/tuple.png)
 
+![tuple-pattern](/reports/figures/tuple-pattern.png)
+
+![request](/reports/figures/request.png)
+
+![response](/reports/figures/response.png)
 
 ## Analiza rozwiązania
 Poniżej przedstawiamy analizę istonych naszym zdaniem kwiestii proponowanego rozwiązania.
 ### Realizacja przestrzeni krotek
-Tutaj o tym jak proces rodzic tworzy procesy potomne i przechodzi w tryb serwera
+<p align="justify">
+Kontener przechowujący krotki został zrealizowany jako <a href="https://en.cppreference.com/w/cpp/container/unordered_map">std::unordered_map</a>. Pozwala to na optymalizację czasu przeszukiwania struktury w celu 
+dopasowania wzorca. Kluczem w strukturze jest schemat krotki (wektor typów). Komunikacja z przestrzenią krotek przebiega z udziałem klasy 
+<b><i>linda::Handle</i></b>, która opakowuje obsługę potoków udostępniając metody read, in oraz out. Dzięki temu metoda komunikacji miedzyprocesowej 
+jest z punktu widzenia użytkownika biblioteki przezroczysta.
+
+Podczas tworzenia obiektu klasy <b><i>linda::Server</i></b>, tworzy on dla każdego klienta odpowiednie potoki nienazwane przez które będzie się z 
+nimi komunikował. Następnie za pomocą funkcji <em>fork()</em> tworzy procesy potomne, którym przekazuje wcześniej przygotowane potoki.
+Po przygotowaniu wszystkich klientów obiekt <b><i>linda::Server</i></b> przechodzi w tryb serwera i jest gotowy na obsługę zapytań przychodzących od 
+klientów.
+</p>
 
 ### Przetwarzanie żądań przez linda::Server
-Tutaj o poll
+<p align="justify">
+Proces koordynujący po uruchomieniu procesów potomnych przechodzi w tryb pracy serwera. Tryb ten realizowany jest poprzez pętlę nieskończoną
+, w której serwer oczekuje na wiadomości od klientów. By wyeliminować aktywne oczekiwanie korzystamy z funkcji <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll(2)</a>.
+Gdy klient wyśle do serwera żądanie ten dokłada je do wewnętrznej kolejki FIFO i rozpoczyna obsługę. 
+</p>
+
+<p align="justify">
+Obsługa przebiega w pętli, w każdym kroku sprawdzane jest, czy któreś z poprzednich żądań nie uległo przedawnieniu, jeżeli tak to odsyłany jest 
+stosowny komunikat do oczekującego klienta (po więcej informacji patrz <a href="#obsluga-timeout'ow">obsługa timeout'ów</a>). Następnie serwer próbuje
+wykonać jedno żądanie, iterując się po wewnętrznej kolejce. Wykonanie jednego żądania kończy krok pętli. Warunkiem zakończenia pętli obsługi jest 
+niemożność wykonania żadnego z oczekujacych żądań. Jest to przypadek, w którym warunki żadnego z żądań nie zostały spełnione i serwer przechodzi w 
+tryb oczekiwania na nowe żądania.
+</p>
+
+<p align="justify">
+Rozwiązanie to zapewnia, że procesy nie zostaną zagłodzone - kolejność realizacji żądań ustalana jest na podstawie kolejności zgłoszeń. 
+Dodatkowo eliminujemy aktywne oczekiwanie i optymalizujemy działanie timeout'ów, o czym szerzej w kolejnej sekcji.
+</p>
+
+<a id="obsluga-timeout'ow">
+</a>
 
 ### Obsługa timeout'ów
-Jak wygląda obsługa timeout'ów. Przypadki skrajne.
+<p align="justify">
+Timeout podawany jest w milisekundach i jest on sunchronizowany do serwera - tzn. timeout liczony jest od czasu zarejestrowania przez serwer żądania 
+klienta. Oznacza to, że z punktu widzenia użytkownika nie ma gwarancji, że proces odblokuje się po upływie zadeklarowanego czasu, ale gwarantuje 
+poprawną synchronizację żądań.
+
+W celu zapewnienia możliwie małej niedokładności, przed wykonaniem dowolnego żądania serwer zweryfikuje, które żądania się przedawiniły i dla nich priorytetowo wyśle komunikat o przedawnieniu żądania. 
+
+Uważamy, że takie podjście jest odpowiednie, gdyż gwarantujemy poprawność synchronizacji i tym samym nie dojdzie do sytuacji w której klient  
+odblokował się po timeout'cie, a serwer wykonał operację input - efektywnie błędnie usuwająć krotkę. Biorąc pod uwagę, że systomowe funkcje takie jak 
+<a href="https://man7.org/linux/man-pages/man2/nanosleep.2.html">nanosleep(2)</a> nie gwarantują pełnej dokładności czasowej uważamy brak takiej
+gwarancji w naszej bibliotece za dopuszczalny.
+</p>
 
 ## Podział na moduły
 * LindaServer - realizuje koordynatora przestrzeni krotek. Tworzy przestrzeń i uruchamia procesy, które chcą z niej korzystać. 
 Implementuje serwer obsługujący żądania utworzony procesów.
 * LindaHandle - realizuje obiekt dostępowy do przestrzeni krotek. Obiekt ten posiada interfejs języka Linda (ale go nie implementuje) i jest wykorzystywany przez procesy komunikujące się poprzez przestrzeń krotek.
 * LindaTuple - zawiera struktury krotek i operacje jakie można na nich przeprowadzić.
-* LindaTupleSpace - realizuje kontener na krotki, odpowiada za realizację funkcji językja Linda
+* LindaTupleSpace - realizuje kontener na krotki, posiada metody modyfikujące przestrzeń krotek odpowiadające operacjom języka Linda
 * Moduł testowy - zawiera testy jednostkowe i przykładowe programy korzystające z biblioteki.
 
 ## Struktura komunikacji między modułami
-
+<p align="center">
+  <img src="figures/module-com-diagram.jpg" alt="module-com-diagram" width="600"/>
+</p>
 
 ## Szczegóły implementacji i używane biblioteki
 Język implementacji: __C++17__  
