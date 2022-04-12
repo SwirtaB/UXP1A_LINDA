@@ -1,6 +1,7 @@
 #include "LindaCommand.hpp"
 
 #include "Buffer.hpp"
+#include "Debug.hpp"
 #include "LindaTuple.hpp"
 
 #include <cstdio>
@@ -18,7 +19,7 @@ Request Request::Read(TuplePattern &pattern, int timeout_ms) {
 }
 
 Request Request::In(TuplePattern &pattern, int timeout_ms) {
-    return Request(RequestType::Read, timeout_ms, pattern.serialize());
+    return Request(RequestType::In, timeout_ms, pattern.serialize());
 }
 
 Request Request::Out(Tuple &tuple) {

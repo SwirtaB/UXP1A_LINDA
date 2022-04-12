@@ -1,8 +1,12 @@
 #include "Buffer.hpp"
 
-#include <unistd.h>
+#include "Debug.hpp"
 
-BufferEncoder::BufferEncoder() : data_(sizeof(int), 0) {}
+#include <stdexcept>
+#include <string>
+#include <sys/types.h>
+#include <unistd.h>
+#include <vector>
 
 void writeIntToChars(char *ptr, int value) {
     char *int_val = static_cast<char *>(static_cast<void *>(&value));
@@ -31,7 +35,6 @@ int readFloatFromChars(char *ptr) {
 
 void BufferEncoder::pushChar(char value) {
     data_.emplace_back(value);
-    increaseSize(1);
 }
 
 void BufferEncoder::pushInt(int value) {
@@ -39,7 +42,6 @@ void BufferEncoder::pushInt(int value) {
     for (int i = 0; i < sizeof(int); ++i) {
         data_.emplace_back(int_val[i]);
     }
-    increaseSize(sizeof(int));
 }
 
 void BufferEncoder::pushFloat(float value) {
@@ -47,7 +49,6 @@ void BufferEncoder::pushFloat(float value) {
     for (int i = 0; i < sizeof(float); ++i) {
         data_.emplace_back(float_val[i]);
     }
-    increaseSize(sizeof(float));
 }
 
 void BufferEncoder::pushString(const std::string &value) {
@@ -55,7 +56,6 @@ void BufferEncoder::pushString(const std::string &value) {
         data_.emplace_back(c);
     }
     data_.emplace_back(0);
-    increaseSize(value.size() + 1);
 }
 
 void BufferEncoder::pushData(const std::vector<char> &data) {
@@ -63,33 +63,35 @@ void BufferEncoder::pushData(const std::vector<char> &data) {
     for (char c : data) {
         data_.emplace_back(c);
     }
-    increaseSize(sizeof(int) + data.size());
 }
 
 std::vector<char> BufferEncoder::encode() {
-    return std::move(data_);
+    return data_;
 }
 
 void BufferEncoder::send(int fd) {
+    std::vector<char> out(data_.size() + sizeof(int));
+    writeIntToChars(out.data(), data_.size());
+    for (int i = 0; i < data_.size(); ++i) {
+        out[i + sizeof(int)] = data_[i];
+    }
+
     int sent = 0;
-    while (sent < data_.size()) {
-        int res = write(fd, data_.data() + sent, data_.size() - sent);
+    while (sent < out.size()) {
+        int res = write(fd, out.data() + sent, out.size() - sent);
         if (res <= 0) {
             perror("failed to write request");
-            throw res;
+            throw std::runtime_error("failed to write request");
         } else {
             sent += res;
         }
     }
 }
 
-void BufferEncoder::increaseSize(int size) {
-    int current = readIntFromChars(data_.data());
-    writeIntToChars(data_.data(), current + size);
-}
-
 char BufferDecoder::readChar() {
-    return data_[progress_++];
+    char ret = data_[progress_];
+    progress_ += 1;
+    return ret;
 }
 
 int BufferDecoder::readInt() {
@@ -108,10 +110,10 @@ std::string BufferDecoder::readString() {
     std::vector<char> str;
     char              c;
     do {
-        c = data_[progress_++];
+        c = data_[progress_];
+        progress_ += 1;
         str.emplace_back(c);
     } while (c != 0);
-    progress_ += str.size();
     return std::string(str.data());
 }
 
@@ -120,24 +122,25 @@ std::vector<char> BufferDecoder::readData() {
     std::vector<char> data;
     data.reserve(size);
     for (int i = 0; i < size; ++i) {
-        data.emplace_back(data_[progress_++]);
+        data.emplace_back(data_[progress_]);
+        progress_ += 1;
     }
     return data;
 }
 
 BufferDecoder BufferDecoder::decode(const std::vector<char> &data) {
-    return BufferDecoder(data.data() + sizeof(int), data.size() - sizeof(int));
+    return BufferDecoder(data);
 }
 
 BufferDecoder BufferDecoder::recv(int fd) {
     int   size;
-    char *size_ptr = static_cast<char *>(static_cast<void *>(&size_ptr));
+    char *size_ptr = static_cast<char *>(static_cast<void *>(&size));
     int   recv     = 0;
     while (recv < sizeof(int)) {
         int res = read(fd, size_ptr + recv, sizeof(int) - recv);
         if (res <= 0) {
             perror("failed to read request size");
-            throw res;
+            throw std::runtime_error("failed to read request size");
         } else {
             recv += res;
         }
@@ -149,7 +152,7 @@ BufferDecoder BufferDecoder::recv(int fd) {
         int res = read(fd, decoder.data_.data() + recv, size - recv);
         if (res <= 0) {
             perror("failed to read request data");
-            throw res;
+            throw std::runtime_error("failed to read request data");
         } else {
             recv += res;
         }
@@ -159,4 +162,4 @@ BufferDecoder BufferDecoder::recv(int fd) {
 
 BufferDecoder::BufferDecoder(int size) : data_(size, 0), progress_(0) {}
 
-BufferDecoder::BufferDecoder(const char *ptr, int size) : data_(ptr, ptr + size), progress_(0) {}
+BufferDecoder::BufferDecoder(const std::vector<char> &data) : data_(data), progress_(0) {}

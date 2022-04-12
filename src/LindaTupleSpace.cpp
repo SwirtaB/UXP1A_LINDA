@@ -1,5 +1,6 @@
 #include "LindaTupleSpace.hpp"
 
+#include "Debug.hpp"
 #include "LindaTuple.hpp"
 
 namespace linda
@@ -7,9 +8,9 @@ namespace linda
 
 std::optional<Tuple> TupleSpace::get(TuplePattern &pattern) {
     if (space_.count(pattern.schema())) {
-        std::vector<Tuple> &vec = space_.at(pattern.schema());
+        std::vector<Tuple> &vec = space_[pattern.schema()];
         for (int i = 0; i < vec.size(); ++i) {
-            if (pattern.matches(vec.at(i))) {
+            if (pattern.matches(vec[i])) {
                 return vec[i];
             }
         }
@@ -19,9 +20,9 @@ std::optional<Tuple> TupleSpace::get(TuplePattern &pattern) {
 
 std::optional<Tuple> TupleSpace::consume(TuplePattern &pattern) {
     if (space_.count(pattern.schema())) {
-        std::vector<Tuple> &vec = space_.at(pattern.schema());
+        std::vector<Tuple> &vec = space_[pattern.schema()];
         for (int i = 0; i < vec.size(); ++i) {
-            if (pattern.matches(vec.at(i))) {
+            if (pattern.matches(vec[i])) {
                 Tuple t = vec[i];
                 vec.erase(vec.begin() + i);
                 return t;
@@ -35,7 +36,7 @@ void TupleSpace::put(Tuple &tuple) {
     if (!space_.count(tuple.schema())) {
         space_.emplace(tuple.schema(), std::vector<Tuple>());
     }
-    space_.at(tuple.schema()).emplace_back(tuple);
+    space_[tuple.schema()].emplace_back(tuple);
 }
 
 } // namespace linda

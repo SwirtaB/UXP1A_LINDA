@@ -8,15 +8,15 @@ namespace linda
 
 enum class RequestType : char
 {
-    Read,
-    In,
-    Out,
+    Read = 'r',
+    In   = 'i',
+    Out  = 'o',
 };
 
 enum class ResponseType : char
 {
-    Timeout,
-    Result,
+    Timeout = 'r',
+    Result  = 't',
 };
 
 class Request

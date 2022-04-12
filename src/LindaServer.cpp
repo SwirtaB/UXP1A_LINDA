@@ -1,5 +1,6 @@
 #include "LindaServer.hpp"
 
+#include "Debug.hpp"
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
@@ -12,8 +13,10 @@
 #include <fcntl.h>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <poll.h>
 #include <ratio>
+#include <stdexcept>
 #include <sys/poll.h>
 #include <unistd.h>
 #include <utility>
@@ -26,13 +29,14 @@ Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers
 int Server::start() {
     spawnWorkers();
     while (true) {
-        auto ready = waitForRequests();
+        std::vector<int> ready = waitForRequests();
         if (ready.size() > 0) {
             collectRequests(ready);
             do {
                 timeoutRequests();
             } while (completeRequest());
         }
+        timeoutRequests();
     }
 }
 
@@ -42,14 +46,14 @@ void Server::spawnWorkers() {
         int in_pipe_res = pipe(in_pipe);
         if (in_pipe_res != 0) {
             perror("Failed to construct in pipe");
-            throw in_pipe_res;
+            throw std::runtime_error("Failed to construct in pipe");
         }
 
         int out_pipe[2];
         int out_pipe_res = pipe(out_pipe);
         if (out_pipe_res != 0) {
             perror("Failed to construct out pipe");
-            throw out_pipe_res;
+            throw std::runtime_error("Failed to construct out pipe");
         }
 
         worker_handles_.emplace(in_pipe[0], Server::WorkerHandle{.in_pipe = in_pipe[0], .out_pipe = out_pipe[1]});
@@ -61,42 +65,41 @@ void Server::spawnWorkers() {
     }
 }
 
+std::vector<int> Server::waitForRequests() {
+    std::vector<pollfd> pollfds;
+    for (auto &wh : worker_handles_) {
+        pollfd pfd;
+        pfd.fd     = wh.second.in_pipe;
+        pfd.events = POLLIN;
+        pollfds.emplace_back(pfd);
+    }
+
+    int timeout  = findEarliestTimeout();
+    int poll_res = poll(pollfds.data(), pollfds.size(), timeout);
+    if (poll_res < 0) {
+        perror("Failed to poll");
+        throw std::runtime_error("Failed to poll");
+    } else if (poll_res > 0) {
+        std::vector<int> ready;
+        for (pollfd pfd : pollfds) {
+            if (pfd.revents & POLLIN) {
+                ready.emplace_back(pfd.fd);
+            }
+        }
+        return ready;
+    } else {
+        return std::vector<int>();
+    }
+}
+
 void Server::collectRequests(std::vector<int> &ready) {
     for (int fd : ready) {
         Request request = Request::receive(fd);
         requests_.emplace_back(fd, request);
-        insertTimeout(fd, request.getTimeout());
-    }
-}
-
-bool Server::completeRequest() {
-    for (int i = 0; i < requests_.size(); ++i) {
-        auto request = requests_.at(i);
-        if (request.second.getType() == RequestType::Out) {
-            Tuple t = request.second.getTuple();
-            tuple_space_.put(t);
-            return true;
-        } else if (request.second.getType() == RequestType::Read) {
-            TuplePattern         tp  = request.second.getTuplePattern();
-            std::optional<Tuple> get = tuple_space_.get(tp);
-            if (get.has_value()) {
-                Response r = Response::Result(get.value());
-                answerRequest(request.first, r);
-                return true;
-            }
-        } else if (request.second.getType() == RequestType::In) {
-            TuplePattern         tp      = request.second.getTuplePattern();
-            std::optional<Tuple> consume = tuple_space_.consume(tp);
-            if (consume.has_value()) {
-                Response r = Response::Result(consume.value());
-                answerRequest(request.first, r);
-                return true;
-            }
-        } else {
-            throw "unreachable";
+        if (request.getType() != RequestType::Out) {
+            insertTimeout(fd, request.getTimeout());
         }
     }
-    return false;
 }
 
 void Server::timeoutRequests() {
@@ -109,30 +112,42 @@ void Server::timeoutRequests() {
         }
     }
     for (int fd : timed_out) {
-        Response r = Response::Timeout();
+        std::optional<Response> r = Response::Timeout();
         answerRequest(fd, r);
     }
 }
 
-std::vector<int> Server::waitForRequests() {
-    std::vector<pollfd> pollfds;
-    for (auto &wh : worker_handles_) {
-        pollfd pfd;
-        pfd.fd     = wh.second.in_pipe;
-        pfd.events = POLLIN;
-        pollfds.emplace_back(pfd);
-    }
-    int timeout = findEarliestTimeout();
-    poll(pollfds.data(), pollfds.size(), timeout);
-
-    std::vector<int> ready;
-    for (pollfd pfd : pollfds) {
-        if (pfd.revents & POLLIN) {
-            ready.emplace_back(pfd.fd);
+bool Server::completeRequest() {
+    for (int i = 0; i < requests_.size(); ++i) {
+        auto       &request = requests_[i];
+        RequestType type    = request.second.getType();
+        if (type == RequestType::Out) {
+            Tuple t = request.second.getTuple();
+            tuple_space_.put(t);
+            std::optional<Response> r = std::nullopt;
+            answerRequest(request.first, r);
+            return true;
+        } else if (type == RequestType::Read) {
+            TuplePattern         tp  = request.second.getTuplePattern();
+            std::optional<Tuple> get = tuple_space_.get(tp);
+            if (get.has_value()) {
+                std::optional<Response> r = Response::Result(get.value());
+                answerRequest(request.first, r);
+                return true;
+            }
+        } else if (type == RequestType::In) {
+            TuplePattern         tp      = request.second.getTuplePattern();
+            std::optional<Tuple> consume = tuple_space_.consume(tp);
+            if (consume.has_value()) {
+                std::optional<Response> r = Response::Result(consume.value());
+                answerRequest(request.first, r);
+                return true;
+            }
+        } else {
+            throw std::runtime_error("Server::completeRequest - invalid RequestType");
         }
     }
-
-    return ready;
+    return false;
 }
 
 long long Server::getNowMs() {
@@ -162,8 +177,7 @@ int Server::findEarliestTimeout() {
     }
 }
 
-void Server::answerRequest(int fd, Response &response) {
-    int out_fd = worker_handles_[fd].out_pipe;
+void Server::answerRequest(int fd, std::optional<Response> &response) {
     for (int i = 0; i < requests_.size(); ++i) {
         if (requests_[i].first == fd) {
             requests_.erase(requests_.begin() + i);
@@ -171,7 +185,10 @@ void Server::answerRequest(int fd, Response &response) {
         }
     }
     timeouts_.erase(fd);
-    response.send(out_fd);
+    if (response.has_value()) {
+        int out_fd = worker_handles_[fd].out_pipe;
+        response.value().send(out_fd);
+    }
 }
 
 } // namespace linda

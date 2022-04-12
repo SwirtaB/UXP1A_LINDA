@@ -4,6 +4,8 @@
 #include "LindaHandle.hpp"
 #include "LindaTupleSpace.hpp"
 
+#include <chrono>
+#include <functional>
 #include <unordered_map>
 
 namespace linda
@@ -33,14 +35,14 @@ class Server
     void             spawnWorkers();
     std::vector<int> waitForRequests();
     void             collectRequests(std::vector<int> &ready);
-    bool             completeRequest();
     void             timeoutRequests();
+    bool             completeRequest();
 
     long long getNowMs();
     void      insertTimeout(int fd, int timeout_ms);
     int       findEarliestTimeout();
 
-    void answerRequest(int fd, Response &response);
+    void answerRequest(int fd, std::optional<Response> &response);
 };
 
 } // namespace linda

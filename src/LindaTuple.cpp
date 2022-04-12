@@ -1,8 +1,11 @@
 #include "LindaTuple.hpp"
 
 #include "Buffer.hpp"
+#include "Debug.hpp"
 
 #include <optional>
+#include <ratio>
+#include <stdexcept>
 #include <string>
 #include <variant>
 
@@ -55,7 +58,7 @@ std::vector<char> Tuple::serialize() {
         } else if (std::holds_alternative<float>(value)) {
             encoder.pushFloat(std::get<float>(value));
         } else {
-            throw "unreachable";
+            throw std::runtime_error("Server::completeRequest - invalid RequestType");
         }
     }
     return encoder.encode();
@@ -74,7 +77,7 @@ Tuple Tuple::deserialize(const std::vector<char> &data) {
         } else if (type == TupleType::Float) {
             builder.Float(decoder.readFloat());
         } else {
-            throw "unreachable";
+            throw std::runtime_error("Tuple::deserialize - invalid RequestType");
         }
     }
     return builder.build();
@@ -102,7 +105,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyInt() {
 }
 
 TuplePattern::Builder &TuplePattern::Builder::intOf(int i) {
-    schema_.push_back(static_cast<char>(TupleType::String));
+    schema_.push_back(static_cast<char>(TupleType::Int));
     requirements_.emplace_back(i);
     return *this;
 }
@@ -114,7 +117,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyFloat() {
 }
 
 TuplePattern::Builder &TuplePattern::Builder::floatOf(float f) {
-    schema_.push_back(static_cast<char>(TupleType::String));
+    schema_.push_back(static_cast<char>(TupleType::Float));
     requirements_.emplace_back(f);
     return *this;
 }
@@ -156,7 +159,7 @@ std::vector<char> TuplePattern::serialize() {
             } else if (std::holds_alternative<float>(value)) {
                 encoder.pushFloat(std::get<float>(value));
             } else {
-                throw "unreachable";
+                throw std::runtime_error("TuplePattern::serialize - invalid RequestType");
             }
         } else {
             encoder.pushChar(0);
@@ -191,7 +194,7 @@ TuplePattern TuplePattern::deserialize(std::vector<char> &data) {
                 builder.anyFloat();
             }
         } else {
-            throw "unreachable";
+            throw std::runtime_error("TuplePattern::deserialize - invalid RequestType");
         }
     }
     return builder.build();

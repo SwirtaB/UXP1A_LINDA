@@ -22,7 +22,7 @@ else()
     target_compile_options(${LIB_NAME} PRIVATE -Ofast)
 endif()
 
-set(BUILD_EXAMPLES True)
+set(BUILD_EXAMPLES False)
 if (BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif ()

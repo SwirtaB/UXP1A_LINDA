@@ -1,11 +1,13 @@
+#pragma once
+
+#include "LindaCommand.hpp"
+
 #include <string>
 #include <vector>
 
 class BufferEncoder
 {
   public:
-    BufferEncoder();
-
     void pushChar(char value);
     void pushInt(int value);
     void pushFloat(float value);
@@ -17,8 +19,6 @@ class BufferEncoder
 
   private:
     std::vector<char> data_;
-
-    void increaseSize(int size);
 };
 
 class BufferDecoder
@@ -38,5 +38,5 @@ class BufferDecoder
     int               progress_;
 
     BufferDecoder(int size);
-    BufferDecoder(const char *ptr, int size);
+    BufferDecoder(const std::vector<char> &);
 };
