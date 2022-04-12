@@ -47,21 +47,65 @@ Proponowane rozwiązanie to biblioteka pozwalającą na uruchomienie wielu proce
 </p> 
 
 Przyjmujemy następujące założenia:
-* Tutaj przyjęte założenia
+* Nie zakładamy maksymalnego rozmiaru krotki, jest on ograniczony jedynie przez docelowy system.
+* Funkcje, które użytkownik przekazuje do uruchomienia jako pierwszą w procesie potomnym musi być odpowiedniej postaci:
+  patrz [Wymagania funkcji użytkownika](#wymagania-funkcji-użytkownika)
 
 ## Opis funkcjonalny
 ### Ujęcie ogólne
-Tutaj opis funkcjonalny
+Użytkownikowi biblioteki udostępnione są poniższe funkcjonalności:
+* utworzenie instancji obiektu, który realizuje wieloprocesowy dostęp do przestrzeni krotek
+* uruchomienie systemu komunikacji
+* dokonywanie operacji zdefiniowanych przez język Linda:
+    * wstawienie krotki do przestrzeni
+    * odczytanie krotki z przestrzeni
+    * odczytanie i usinięcie krotki z przestrzeni
 
-### Realizacja przestrzeni krotek
-Tutaj o tym jak proces rodzic tworzy procesy potomne i przechodzi w tryb serwera, oraz jak w trybie serwera obsługuje żądania
+### linda::Server
+<p align="justify">
+Biblioteka udostępnia programiście klasę <b><i>linda::Server</i></b>, która to realizuje wieloprocesową komunikację. Posiada wewnętrznie instancję przestrzeni krotek i podczas konstrukcji przyjmuje wskazania na funkcje, które zostaną uruchomione jako osobne procesy.
+W momencie uruchomienia komunikacji, nastąpi utworzenie procesów potomnych, a proces wywołujący przejdzie w tryb pracy serwera. Korzystając z funkcji <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll(2)</a>, serwer oczekuje na komunikaty od procesów potomnych i realizuje ich żądania w przestrzeni krotek. 
+Klasa udostępnia tylko jedną publiczną metodę:
+</p> 
+
+* ```void start()```
+
+<p align="justify">
+Metoda ta uruchamia system komunikacyjny. Użytkownik biblioteki może jedynie utworzyć instancję serwera i ją uruchomić.
+</p>
+
+### linda::Handle
+<p align="justify">
+Uchwyt do przestrzeni krotek, implementowany przez klasę, która opakowuje komunikację z procesem koordynującym przy użyciu potoków nienazwanych. Obiekt tej klasy zostanie utworzony
+przez <b><i>linda::Server</i></b> i przekazany procesowi potomnemu. Klasa udostępnia trzy metody implementujące instrukcje języka Linda:
+</p>
+
+* ```std::optional<Tuple> read(TuplePattern &pattern, int timeout_ms = 0)```
+* ```std::optional<Tuple> in(TuplePattern &pattern, int timeout_ms = 0)```
+* ```void                 out(Tuple &tuple)```
+
+### Wymagania funkcji użytkownika
+Jedyne ograniczenie dotyczy postaci funkcji, które są przekazywane podczas kosntrukcji obiektu <b><i>linda::Server</i></b>:
+```
+void function(linda::Handle handle) {
+    ...
+}
+```
 
 ### Struktury
-Tutaj struktury komunikatów i struktury Tupli
+Reprezentację danych podajemy w formie struktur języka C. Nie muszą one odzwierciedlać faktycznej implementacji (np. przedstawiona struktora mogła zostać zaimplementowana jako klasa), a służą jedynie zarysowaniu ogólnej koncepcji organizacji danych i struktury komunikatów.
+
 
 ## Analiza rozwiązania
-* Na 100% analiza poll albo select - w zależności od tego co wybierzemy
-* Analiza przypadku z timeoutem
+Poniżej przedstawiamy analizę istonych naszym zdaniem kwiestii proponowanego rozwiązania.
+### Realizacja przestrzeni krotek
+Tutaj o tym jak proces rodzic tworzy procesy potomne i przechodzi w tryb serwera
+
+### Przetwarzanie żądań przez linda::Server
+Tutaj o poll
+
+### Obsługa timeout'ów
+Jak wygląda obsługa timeout'ów. Przypadki skrajne.
 
 ## Podział na moduły
 * LindaServer - realizuje koordynatora przestrzeni krotek. Tworzy przestrzeń i uruchamia procesy, które chcą z niej korzystać. 
