@@ -64,7 +64,7 @@ Użytkownikowi biblioteki udostępnione są poniższe funkcjonalności:
 ### linda::Server
 <p align="justify">
 Biblioteka udostępnia programiście klasę <b><i>linda::Server</i></b>, która to realizuje wieloprocesową komunikację. Posiada wewnętrznie instancję przestrzeni krotek i podczas konstrukcji przyjmuje wskazania na funkcje, które zostaną uruchomione jako osobne procesy.
-W momencie uruchomienia komunikacji, nastąpi utworzenie procesów potomnych, a proces wywołujący przejdzie w tryb pracy serwera. Korzystając z funkcji <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll(2)</a>, serwer oczekuje na komunikaty od procesów potomnych i realizuje ich żądania w przestrzeni krotek. 
+W momencie uruchomienia komunikacji, nastąpi utworzenie procesów potomnych, a następnie proces wywołujący przejdzie w tryb pracy serwera. Korzystając z funkcji <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll(2)</a>, serwer oczekuje na komunikaty od procesów potomnych i realizuje ich żądania w przestrzeni krotek. 
 Klasa udostępnia tylko jedną publiczną metodę:
 </p> 
 
@@ -94,10 +94,10 @@ void function(linda::Handle handle) {
 
 ### Struktury
 
-#### Rządanie
+#### Żądanie
 ![request](/reports/figures/request.png)
 - rozmiar reszty wiadomości: `int`
-- rodzaj rządania: `enum RequestType: char { Read, In, Out }`
+- rodzaj żądania: `enum RequestType: char { Read, In, Out }`
 - wartość timeoutu: `int` (dla `Out` ignorowane ponieważ nie czeka na odpowiedź)
 - dla `In` oraz `Read` wzorzec krotki: `TuplePattern`, dla `Out` krotka: `Tuple`
 
@@ -118,24 +118,24 @@ void function(linda::Handle handle) {
 - wzorce wartości w tej samej kolejności co w schemacie
 
 Wzorce wartości posiadają dwie postacie:
-- zerowy bajt - oznacza wymaganie dowolnej wartości
-- niezerowy bajt + wartość - oznacza wymaganie konkretnej wartości
+- `Any`
+- `{ Eq, Less, LessEq, More, MoreEq }` + wartość
 
-#### Przykład rządania Out
+#### Przykład żądania Out
 ![tuple-pattern](/reports/figures/request-out-example.png)
 - rozmiar reszty wiadomości = `1 + 4 + 5 + (4 + 4 + 12 + 4)` = `34`
-- rodzaj rządania = `Out` = `'o'`
+- rodzaj żądania = `Out` = `'o'`
 - timeout = `200ms`
 - schemat krotki = `(int, float, string, int)`
 - wartości krotki = `(15, 7.0, "hello world", 115)`
 
-#### Przykład rządania Read
+#### Przykład żądania Read
 ![tuple-pattern](/reports/figures/request-read-example.png)
 - rozmiar reszty wiadomości = `1 + 4 + 3 + 1 + 12 + 1` = `22`
-- rodzaj rządania = `Read` = `'r'`
+- rodzaj żądania = `Read` = `'r'`
 - timeout = `200`
 - schemat krotki = `(string, int)`
-- wzorce krotki = `("hello world", *)`
+- wzorce krotki = `(== "hello world", *)`
 
 #### Przykład odpowiedz Result
 ![tuple-pattern](/reports/figures/response-result-example.png)
@@ -189,24 +189,18 @@ Dodatkowo eliminujemy aktywne oczekiwanie i optymalizujemy działanie timeout'ó
 
 ### Obsługa timeout'ów
 <p align="justify">
-Timeout podawany jest w milisekundach i jest on sunchronizowany do serwera - tzn. timeout liczony jest od czasu zarejestrowania przez serwer żądania 
-klienta. Oznacza to, że z punktu widzenia użytkownika nie ma gwarancji, że proces odblokuje się po upływie zadeklarowanego czasu, ale gwarantuje 
-poprawną synchronizację żądań.
+Timeout realizowany jest przez serwer, przez wysłanie do klienta odpowiedzi, że nie zdążył on na czas zrealizować przerwania i żądanie się przedawniło. Timeout podawany jest w milisekundach i jest on synchronizowany do serwera - tzn. timeout liczony jest od czasu zarejestrowania przez serwer żądania klienta. Oznacza to, że z punktu widzenia użytkownika próba wykonania operacji może zablokować proces na dłużej niż podana wartość, ale gwarantuje poprawną synchronizację żądań.
 
-W celu zapewnienia możliwie małej niedokładności, przed wykonaniem dowolnego żądania serwer zweryfikuje, które żądania się przedawiniły i dla nich priorytetowo wyśle komunikat o przedawnieniu żądania. 
+W celu zapewnienia możliwie małej niedokładności, przed każdą próbą wykonania kolejnego żądania sprawdzi które żądania się przedawiniły i do nich priorytetowo wyśle komunikat o przedawnieniu żądania.
 
-Uważamy, że takie podjście jest odpowiednie, gdyż gwarantujemy poprawność synchronizacji i tym samym nie dojdzie do sytuacji w której klient  
-odblokował się po timeout'cie, a serwer wykonał operację input - efektywnie błędnie usuwająć krotkę. Biorąc pod uwagę, że systomowe funkcje takie jak 
-<a href="https://man7.org/linux/man-pages/man2/nanosleep.2.html">nanosleep(2)</a> nie gwarantują pełnej dokładności czasowej uważamy brak takiej
-gwarancji w naszej bibliotece za dopuszczalny.
+Uważamy, że takie podjście jest odpowiednie, gdyż gwarantujemy poprawność synchronizacji i tym samym nie dojdzie do sytuacji w której klient odblokował się po timeout'cie, ale serwer zaczął już wykonywać operację input - efektywnie błędnie usuwająć krotkę z przestrzeni. Jedynym sposobem na zapewnienie poprawnego działania systemu jest poprawna synchronizacja klienta z serwerem, która w tej sytuacji wymusza, żeby to serwer informował klienta o tym, że żądanie się przedawniło i żądana operacja nie zostanie wykonana. Biorąc pod uwagę, że systomowe funkcje takie jak n.p. <a href="https://man7.org/linux/man-pages/man2/nanosleep.2.html">nanosleep(2)</a> również nie gwarantują pełnej dokładności czasowej uważamy brak takiej gwarancji w naszej bibliotece za dopuszczalny. 
 </p>
 
 ## Podział na moduły
-* LindaServer - realizuje koordynatora przestrzeni krotek. Tworzy przestrzeń i uruchamia procesy, które chcą z niej korzystać. 
-Implementuje serwer obsługujący żądania utworzony procesów.
-* LindaHandle - realizuje obiekt dostępowy do przestrzeni krotek. Obiekt ten posiada interfejs języka Linda (ale go nie implementuje) i jest wykorzystywany przez procesy komunikujące się poprzez przestrzeń krotek.
-* LindaTuple - zawiera struktury krotek i operacje jakie można na nich przeprowadzić.
-* LindaTupleSpace - realizuje kontener na krotki, posiada metody modyfikujące przestrzeń krotek odpowiadające operacjom języka Linda
+* LindaServer - realizuje koordynatora przestrzeni krotek. Tworzy przestrzeń krotek i uruchamia procesy, które chcą z niej korzystać. Implementuje serwer obsługujący żądania wykonywania operacji języka Linda wysyłane przez utworzone procesy.
+* LindaHandle - realizuje obiekt dostępowy do przestrzeni krotek. Obiekt ten posiada interfejs języka Linda i jest wykorzystywany przez procesy korzystające z przestrzeni krotek. Implementuje operacje języka Linda przez wysyłanie żądań do koordynatora przestrzeni krotek.
+* LindaTuple - zawiera implementacje struktur reprezentujących krotki i wzorce krotek, oraz operacje pozwalające na serializację i deserializację ich.
+* LindaTupleSpace - realizuje przestrzeń krotek. Posiada metody modyfikujące przestrzeń odpowiadające operacjom języka Linda.
 * Moduł testowy - zawiera testy jednostkowe i przykładowe programy korzystające z biblioteki.
 
 ## Struktura komunikacji między modułami
