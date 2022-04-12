@@ -93,20 +93,68 @@ void function(linda::Handle handle) {
 ```
 
 ### Struktury
-![tuple](/reports/figures/tuple.png)
 
-![tuple-pattern](/reports/figures/tuple-pattern.png)
-
+#### Rządanie
 ![request](/reports/figures/request.png)
+- rozmiar reszty wiadomości: `int`
+- rodzaj rządania: `enum RequestType: char { Read, In, Out }`
+- wartość timeoutu: `int` (dla `Out` ignorowane ponieważ nie czeka na odpowiedź)
+- dla `In` oraz `Read` wzorzec krotki: `TuplePattern`, dla `Out` krotka: `Tuple`
 
+#### Odpowiedź
 ![response](/reports/figures/response.png)
+- rozmiar reszty wiadomości: `int`
+- rodzaj odpowiedzi: `enum ResponseType: char { Result, Timeout }`
+- dla `Result` dodatkowo krotka: `Tuple`
+
+#### Krotka (Tuple)
+![tuple](/reports/figures/tuple.png)
+- schemat krotki zakodowany w stringu znakami `'s'`, `'i'` oraz `'f'` (n.p. `"fsii"` oznacza krotkę `(float, string, int, int)`)
+- wartośći krotki w tej samej kolejności co w schemacie
+
+#### Wzorzec krotki (TuplePattern)
+![tuple-pattern](/reports/figures/tuple-pattern.png)
+- schemat krotki zakodowany tak samo jak w krotce
+- wzorce wartości w tej samej kolejności co w schemacie
+
+Wzorce wartości posiadają dwie postacie:
+- zerowy bajt - oznacza wymaganie dowolnej wartości
+- niezerowy bajt + wartość - oznacza wymaganie konkretnej wartości
+
+#### Przykład rządania Out
+![tuple-pattern](/reports/figures/request-out-example.png)
+- rozmiar reszty wiadomości = `1 + 4 + 5 + (4 + 4 + 12 + 4)` = `34`
+- rodzaj rządania = `Out` = `'o'`
+- timeout = `200ms`
+- schemat krotki = `(int, float, string, int)`
+- wartości krotki = `(15, 7.0, "hello world", 115)`
+
+#### Przykład rządania Read
+![tuple-pattern](/reports/figures/request-read-example.png)
+- rozmiar reszty wiadomości = `1 + 4 + 3 + 1 + 12 + 1` = `22`
+- rodzaj rządania = `Read` = `'r'`
+- timeout = `200`
+- schemat krotki = `(string, int)`
+- wzorce krotki = `("hello world", *)`
+
+#### Przykład odpowiedz Result
+![tuple-pattern](/reports/figures/response-result-example.png)
+- rozmiar reszty wiadomości = `1 + 4 + 4 + 12 + 4` = `25`
+- rodzaj odpowiedzi = `Result` = `r`
+- schemat krotki = `(int, string, float)`
+- wartości krotki = `(-3, "hello world", 0.34)`
+
+#### Przykład odpowiedzi Timeout
+![tuple-pattern](/reports/figures/response-timeout-example.png)
+- rozmiar reszty wiadomości
+- rodzaj odpowiedzi = `Timeout` = `'t'`
 
 ## Analiza rozwiązania
 Poniżej przedstawiamy analizę istonych naszym zdaniem kwiestii proponowanego rozwiązania.
 ### Realizacja przestrzeni krotek
 <p align="justify">
 Kontener przechowujący krotki został zrealizowany jako <a href="https://en.cppreference.com/w/cpp/container/unordered_map">std::unordered_map</a>. Pozwala to na optymalizację czasu przeszukiwania struktury w celu 
-dopasowania wzorca. Kluczem w strukturze jest schemat krotki (wektor typów). Komunikacja z przestrzenią krotek przebiega z udziałem klasy 
+dopasowania wzorca. Kluczem w strukturze jest schemat krotki (string). Komunikacja z przestrzenią krotek przebiega z udziałem klasy 
 <b><i>linda::Handle</i></b>, która opakowuje obsługę potoków udostępniając metody read, in oraz out. Dzięki temu metoda komunikacji miedzyprocesowej 
 jest z punktu widzenia użytkownika biblioteki przezroczysta.
 
