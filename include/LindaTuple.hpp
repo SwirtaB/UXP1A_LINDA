@@ -15,9 +15,28 @@ enum class TupleType : char
     Float  = 'f',
 };
 
+enum class RequirementType : char
+{
+    Eq     = 1,
+    Less   = 2,
+    LessEq = 3,
+    More   = 4,
+    MoreEq = 5,
+};
+
+enum class RequirementTypeSerializable : char
+{
+    Eq     = 1,
+    Less   = 2,
+    LessEq = 3,
+    More   = 4,
+    MoreEq = 5,
+    Any    = 6,
+};
+
 typedef std::variant<std::string, int, float> TupleValue;
 
-typedef std::optional<TupleValue> TupleRequirement;
+typedef std::optional<std::pair<RequirementType, TupleValue>> TupleRequirement;
 
 class Tuple
 {
@@ -58,11 +77,11 @@ class TuplePattern
         Builder();
 
         Builder &anyString();
-        Builder &stringOf(std::string &&s);
+        Builder &stringOf(RequirementType, std::string &&s);
         Builder &anyInt();
-        Builder &intOf(int i);
+        Builder &intOf(RequirementType, int i);
         Builder &anyFloat();
-        Builder &floatOf(float f);
+        Builder &floatOf(RequirementType, float f);
 
         TuplePattern build();
 

@@ -12,8 +12,9 @@ void worker1(linda::Handle handle) {
 }
 
 void worker2(linda::Handle handle) {
-    linda::TuplePattern p = linda::TuplePattern::Builder().anyString().intOf(1).build();
-    std::cout << std::get<std::string>(handle.in(p)->values()[0]) << std::endl;
+    linda::TuplePattern tp = linda::TuplePattern::Builder().anyString().intOf(linda::RequirementType::Eq, 1).build();
+    linda::Tuple        t  = handle.in(tp).value();
+    std::cout << std::get<std::string>(t.values()[0]) << std::endl;
 }
 
 int main() {
