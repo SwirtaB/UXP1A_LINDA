@@ -94,26 +94,30 @@ void function(linda::Handle handle) {
 
 ### Struktury
 
-#### Żądanie
-![request](/reports/figures/request.png)
+#### Żądanie\
+![request](figures/request.png)
+
 - rozmiar - rozmiar reszty wiadomości: `int`
 - typ - rodzaj żądania: `enum RequestType: char { Read, In, Out }`
 - timeout - wartość timeoutu: `int` (dla `Out` ignorowane ponieważ nie czeka na odpowiedź)
 - dla `In` oraz `Read` wzorzec krotki: `TuplePattern`, dla `Out` krotka: `Tuple`
 
-#### Odpowiedź
-![response](/reports/figures/response.png)
+#### Odpowiedź\
+![response](figures/response.png)
+
 - rozmiar - rozmiar reszty wiadomości: `int`
 - typ - rodzaj odpowiedzi: `enum ResponseType: char { Result, Timeout }`
 - dla `Result` dodatkowo krotka: `Tuple`
 
-#### Krotka (Tuple)
-![tuple](/reports/figures/tuple.png)
+#### Krotka (Tuple)\
+![tuple](figures/tuple.png)
+
 - schemat - schemat krotki zakodowany w stringu znakami `'s'`, `'i'` oraz `'f'` (n.p. `"fsii"` oznacza krotkę `(float, string, int, int)`)
 - wartości - wartości krotki w tej samej kolejności co w schemacie
 
-#### Wzorzec krotki (TuplePattern)
-![tuple-pattern](/reports/figures/tuple-pattern.png)
+#### Wzorzec krotki (TuplePattern)\
+![tuple-pattern](figures/tuple-pattern.png)
+
 - schemat - schemat krotki zakodowany tak samo jak w krotce
 - wzory - wzorce wartości w tej samej kolejności co w schemacie
 
@@ -121,37 +125,43 @@ Wzorce wartości posiadają dwie postacie:
 - `Any`
 - `{ Eq, Less, LessEq, More, MoreEq }` + wartość
 
-#### Przykład żądania Out
-![tuple-pattern](/reports/figures/request-out-example.png)
+#### Przykład żądania Out\
+![tuple-pattern](figures/request-out-example.png)
+
 - rozmiar reszty wiadomości = `1 + 4 + 5 + (4 + 4 + 12 + 4)` = `34`
 - rodzaj żądania = `Out` = `'o'`
 - timeout = `200ms`
 - schemat krotki = `(int, float, string, int)`
 - wartości krotki = `(15, 7.0, "hello world", 115)`
 
-#### Przykład żądania Read
-![tuple-pattern](/reports/figures/request-read-example.png)
+#### Przykład żądania Read\
+![tuple-pattern](figures/request-read-example.png)
+
 - rozmiar reszty wiadomości = `1 + 4 + 3 + 1 + 12 + 1` = `22`
 - rodzaj żądania = `Read` = `'r'`
 - timeout = `200`
 - schemat krotki = `(string, int)`
 - wzorce krotki = `(== "hello world", *)`
 
-#### Przykład odpowiedz Result
-![tuple-pattern](/reports/figures/response-result-example.png)
+#### Przykład odpowiedz Result\
+![tuple-pattern](figures/response-result-example.png)
+
 - rozmiar reszty wiadomości = `1 + 4 + 4 + 12 + 4` = `25`
 - rodzaj odpowiedzi = `Result` = `r`
 - schemat krotki = `(int, string, float)`
 - wartości krotki = `(-3, "hello world", 0.34)`
 
-#### Przykład odpowiedzi Timeout
-![tuple-pattern](/reports/figures/response-timeout-example.png)
+#### Przykład odpowiedzi Timeout\
+![tuple-pattern](figures/response-timeout-example.png)
+
 - rozmiar reszty wiadomości
 - rodzaj odpowiedzi = `Timeout` = `'t'`
 
 ## Analiza rozwiązania
 Poniżej przedstawiamy analizę istonych naszym zdaniem kwiestii proponowanego rozwiązania.
+
 ### Realizacja przestrzeni krotek
+
 <p align="justify">
 Kontener przechowujący krotki został zrealizowany jako <a href="https://en.cppreference.com/w/cpp/container/unordered_map">std::unordered_map</a>. Pozwala to na optymalizację czasu przeszukiwania struktury w celu 
 dopasowania wzorca. Kluczem w strukturze jest schemat krotki (string). Komunikacja z przestrzenią krotek przebiega z udziałem klasy 
@@ -217,10 +227,8 @@ pełnej dokładności czasowej, uważamy brak takiej gwarancji w naszej bibliote
 * LindaTupleSpace - realizuje przestrzeń krotek. Posiada metody modyfikujące przestrzeń odpowiadające operacjom języka Linda.
 * Moduł testowy - zawiera testy jednostkowe i przykładowe programy korzystające z biblioteki.
 
-## Struktura komunikacji między modułami
-<p align="center">
-  <img src="figures/module-com-diagram.jpg" alt="module-com-diagram" width="600"/>
-</p>
+## Struktura komunikacji między modułami\
+![module-com-diagram](figures/module-com-diagram.jpg)
 
 ## Szczegóły implementacji i używane biblioteki
 Język implementacji: __C++17__  
