@@ -48,7 +48,7 @@ Proponowane rozwiązanie to biblioteka pozwalającą na uruchomienie wielu proce
 
 Przyjmujemy następujące założenia:
 * Nie zakładamy maksymalnego rozmiaru krotki, jest on ograniczony jedynie przez docelowy system.
-* Funkcje, które użytkownik przekazuje do uruchomienia jako pierwszą w procesie potomnym musi być odpowiedniej postaci:
+* Funkcje, które użytkownik przekazuje do uruchomienia jako pierwsze w procesach potomnych muszą być odpowiedniej postaci:
   patrz [Wymagania funkcji użytkownika](#wymagania-funkcji-użytkownika)
 
 ## Opis funkcjonalny
@@ -57,8 +57,8 @@ Użytkownikowi biblioteki udostępnione są poniższe funkcjonalności:
 * utworzenie instancji obiektu, który realizuje przestrzeń krotek i koordynuje wieloprocesowy dostęp do tej przestrzeni
 * uruchomienie systemu komunikacji
 * dokonywanie operacji zdefiniowanych przez język Linda:
-    * wstawienie krotki do przestrzeni
-    * odczytanie krotki z przestrzeni
+    * atomowe wstawienie krotki do przestrzeni
+    * atomowe odczytanie krotki z przestrzeni
     * atomowe odczytanie i usunięcie krotki z przestrzeni
 
 ### linda::Server
@@ -96,26 +96,26 @@ void function(linda::Handle handle) {
 
 #### Żądanie
 ![request](/reports/figures/request.png)
-- rozmiar reszty wiadomości: `int`
-- rodzaj żądania: `enum RequestType: char { Read, In, Out }`
-- wartość timeoutu: `int` (dla `Out` ignorowane ponieważ nie czeka na odpowiedź)
+- rozmiar - rozmiar reszty wiadomości: `int`
+- typ - rodzaj żądania: `enum RequestType: char { Read, In, Out }`
+- timeout - wartość timeoutu: `int` (dla `Out` ignorowane ponieważ nie czeka na odpowiedź)
 - dla `In` oraz `Read` wzorzec krotki: `TuplePattern`, dla `Out` krotka: `Tuple`
 
 #### Odpowiedź
 ![response](/reports/figures/response.png)
-- rozmiar reszty wiadomości: `int`
-- rodzaj odpowiedzi: `enum ResponseType: char { Result, Timeout }`
+- rozmiar - rozmiar reszty wiadomości: `int`
+- typ - rodzaj odpowiedzi: `enum ResponseType: char { Result, Timeout }`
 - dla `Result` dodatkowo krotka: `Tuple`
 
 #### Krotka (Tuple)
 ![tuple](/reports/figures/tuple.png)
-- schemat krotki zakodowany w stringu znakami `'s'`, `'i'` oraz `'f'` (n.p. `"fsii"` oznacza krotkę `(float, string, int, int)`)
-- wartośći krotki w tej samej kolejności co w schemacie
+- schemat - schemat krotki zakodowany w stringu znakami `'s'`, `'i'` oraz `'f'` (n.p. `"fsii"` oznacza krotkę `(float, string, int, int)`)
+- wartości - wartości krotki w tej samej kolejności co w schemacie
 
 #### Wzorzec krotki (TuplePattern)
 ![tuple-pattern](/reports/figures/tuple-pattern.png)
-- schemat krotki zakodowany tak samo jak w krotce
-- wzorce wartości w tej samej kolejności co w schemacie
+- schemat - schemat krotki zakodowany tak samo jak w krotce
+- wzory - wzorce wartości w tej samej kolejności co w schemacie
 
 Wzorce wartości posiadają dwie postacie:
 - `Any`
@@ -155,13 +155,15 @@ Poniżej przedstawiamy analizę istonych naszym zdaniem kwiestii proponowanego r
 <p align="justify">
 Kontener przechowujący krotki został zrealizowany jako <a href="https://en.cppreference.com/w/cpp/container/unordered_map">std::unordered_map</a>. Pozwala to na optymalizację czasu przeszukiwania struktury w celu 
 dopasowania wzorca. Kluczem w strukturze jest schemat krotki (string). Komunikacja z przestrzenią krotek przebiega z udziałem klasy 
-<b><i>linda::Handle</i></b>, która opakowuje obsługę potoków udostępniając metody read, in oraz out. Dzięki temu metoda komunikacji miedzyprocesowej 
-jest z punktu widzenia użytkownika biblioteki przezroczysta.
+<b><i>linda::Handle</i></b>, która opakowuje obsługę potoków udostępniając metody read, in oraz out. Dzięki temu metoda komunikacji 
+miedzyprocesowej jest z punktu widzenia użytkownika biblioteki przezroczysta.
+</p>
 
-Podczas tworzenia obiektu klasy <b><i>linda::Server</i></b>, tworzy on dla każdego klienta odpowiednie potoki nienazwane przez które będzie się z 
-nimi komunikował. Następnie za pomocą funkcji <em>fork()</em> tworzy procesy potomne, którym przekazuje wcześniej przygotowane potoki.
-Po przygotowaniu wszystkich klientów obiekt <b><i>linda::Server</i></b> przechodzi w tryb serwera i jest gotowy na obsługę zapytań przychodzących od 
-klientów.
+<p align="justify">
+Podczas tworzenia obiektu klasy <b><i>linda::Server</i></b>, tworzy on dla każdego klienta odpowiednie potoki nienazwane przez które 
+będzie się z nimi komunikował. Następnie za pomocą funkcji <a href="https://man7.org/linux/man-pages/man2/fork.2.html">fork(2)</a> 
+tworzy procesy potomne, którym przekazuje wcześniej przygotowane potoki. Po przygotowaniu wszystkich klientów obiekt 
+<b><i>linda::Server</i></b> przechodzi w tryb serwera i jest gotowy na obsługę zapytań przychodzących od klientów.
 </p>
 
 ### Przetwarzanie żądań przez linda::Server
@@ -189,11 +191,23 @@ Dodatkowo eliminujemy aktywne oczekiwanie i optymalizujemy działanie timeout'ó
 
 ### Obsługa timeout'ów
 <p align="justify">
-Timeout realizowany jest przez serwer, przez wysłanie do klienta odpowiedzi, że nie zdążył on na czas zrealizować przerwania i żądanie się przedawniło. Timeout podawany jest w milisekundach i jest on synchronizowany do serwera - tzn. timeout liczony jest od czasu zarejestrowania przez serwer żądania klienta. Oznacza to, że z punktu widzenia użytkownika próba wykonania operacji może zablokować proces na dłużej niż podana wartość, ale gwarantuje poprawną synchronizację żądań.
+Timeout realizowany jest przez serwer, przez wysłanie do klienta odpowiedzi, że nie zdążył on na czas zrealizować żądanie. Timeout 
+podawany jest w milisekundach i jest on synchronizowany do serwera - tzn. timeout liczony jest od czasu zarejestrowania przez serwer 
+żądania klienta. Oznacza to, że z punktu widzenia użytkownika próba wykonania operacji może zablokować proces na dłużej niż podana 
+wartość, ale gwarantuje poprawną synchronizację żądań.
+</p>
 
-W celu zapewnienia możliwie małej niedokładności, przed każdą próbą wykonania kolejnego żądania sprawdzi które żądania się przedawiniły i do nich priorytetowo wyśle komunikat o przedawnieniu żądania.
+<p align="justify">
+W celu zapewnienia możliwie małej niedokładności, przed każdą próbą wykonania kolejnego żądania sprawdzane jest które żądania się przedawiniły i do nich priorytetowo wysyłany jest komunikat o przedawnieniu żądania.
+</p>
 
-Uważamy, że takie podjście jest odpowiednie, gdyż gwarantujemy poprawność synchronizacji i tym samym nie dojdzie do sytuacji w której klient odblokował się po timeout'cie, ale serwer zaczął już wykonywać operację input - efektywnie błędnie usuwająć krotkę z przestrzeni. Jedynym sposobem na zapewnienie poprawnego działania systemu jest poprawna synchronizacja klienta z serwerem, która w tej sytuacji wymusza, żeby to serwer informował klienta o tym, że żądanie się przedawniło i żądana operacja nie zostanie wykonana. Biorąc pod uwagę, że systomowe funkcje takie jak n.p. <a href="https://man7.org/linux/man-pages/man2/nanosleep.2.html">nanosleep(2)</a> również nie gwarantują pełnej dokładności czasowej uważamy brak takiej gwarancji w naszej bibliotece za dopuszczalny. 
+<p align="justify">
+Uważamy, że takie podjście jest odpowiednie, gdyż gwarantujemy poprawność synchronizacji i tym samym nie dojdzie do sytuacji w której 
+klient odblokował się po timeout'cie, ale serwer zaczął już wykonywać operację input - efektywnie błędnie usuwająć krotkę z przestrzeni. 
+Jedynym sposobem na zapewnienie poprawnego działania systemu jest poprawna synchronizacja klienta z serwerem, która w tej sytuacji 
+wymusza, żeby to serwer informował klienta o tym, że żądanie się przedawniło i żądana operacja nie zostanie wykonana. Biorąc pod uwagę, że 
+systomowe funkcje takie jak  <a href="https://man7.org/linux/man-pages/man2/nanosleep.2.html">nanosleep(2)</a> również nie gwarantują 
+pełnej dokładności czasowej, uważamy brak takiej gwarancji w naszej bibliotece za dopuszczalny. 
 </p>
 
 ## Podział na moduły
