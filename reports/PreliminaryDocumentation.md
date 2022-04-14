@@ -6,7 +6,7 @@
 * Górniak Daniel
 * Zieliński Jakub
 
-Data przekazania dokumentacji wstępnej: dd.mm.rrrr
+Data przekazania dokumentacji wstępnej: 14.04.2022
 
 ## Temat projektu
 <p align="justify">
@@ -47,6 +47,7 @@ Proponowane rozwiązanie to biblioteka pozwalającą na uruchomienie wielu proce
 </p> 
 
 Przyjmujemy następujące założenia:
+
 * Nie zakładamy maksymalnego rozmiaru krotki, jest on ograniczony jedynie przez docelowy system.
 * Funkcje, które użytkownik przekazuje do uruchomienia jako pierwsze w procesach potomnych muszą być odpowiedniej postaci:
   patrz [Wymagania funkcji użytkownika](#wymagania-funkcji-użytkownika)
@@ -54,6 +55,7 @@ Przyjmujemy następujące założenia:
 ## Opis funkcjonalny
 ### Ujęcie ogólne
 Użytkownikowi biblioteki udostępnione są poniższe funkcjonalności:
+
 * utworzenie instancji obiektu, który realizuje przestrzeń krotek i koordynuje wieloprocesowy dostęp do tej przestrzeni
 * uruchomienie systemu komunikacji
 * dokonywanie operacji zdefiniowanych przez język Linda:
@@ -122,6 +124,7 @@ void function(linda::Handle handle) {
 - wzory - wzorce wartości w tej samej kolejności co w schemacie
 
 Wzorce wartości posiadają dwie postacie:
+
 - `Any`
 - `{ Eq, Less, LessEq, More, MoreEq }` + wartość
 
@@ -230,6 +233,15 @@ pełnej dokładności czasowej, uważamy brak takiej gwarancji w naszej bibliote
 ## Struktura komunikacji między modułami\
 ![module-com-diagram](figures/module-com-diagram.jpg)
 
+## Planowane testy
+Poprawność systemu planujemy testować za pomocą testów zautomatyzowanych podzielonych na dwie kategorie:
+
+* testy jednostkowe modułów - mają zweryfikować, czy implementacja funkcjonalności oferowanych przez
+poszczególne moduły przebiegła poprawnie
+* testy akceptacyjne systemu - mają zweryfikować poprawne działanie całego systemu w różnych 
+scenariuszach testowych. Scenariusze testowe będę realizowane przez zewnętrzne programy wykonujące 
+sekwencję operacji w przestrzeni krotek.
+
 ## Szczegóły implementacji i używane biblioteki
 Język implementacji: __C++17__  
 Kompilator: __clang 13__  
@@ -237,5 +249,6 @@ Narzędzie budowania: __CMake__
 Formater kodu: __clang-format__ - format własny
 
 Wykorzystane biblioteki: 
+
 * GoogleTest - bibliotek testów jednostkowych
 * CTest - runner testów jednostkowych
