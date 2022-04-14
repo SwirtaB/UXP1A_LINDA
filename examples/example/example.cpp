@@ -26,10 +26,12 @@ void closingWorker(linda::Handle handle) {
     sleep(sleep_time);
     std::cout << "Closing worker closes the Linda Server." << std::endl;
     handle.close();
+    std::cout << "dies" << std::endl;
 }
 
 int main() {
-    auto ls = linda::Server(std::vector({std::function(worker1), std::function(worker2)}));
+    std::cout << "ehllo world " << std::endl;
+    auto ls = linda::Server(std::vector({std::function(closingWorker)}));
     ls.start();
     return 0;
 }
