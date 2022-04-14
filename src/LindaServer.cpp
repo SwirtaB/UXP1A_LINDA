@@ -24,14 +24,13 @@
 namespace linda
 {
 
-Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers) {}
+Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers), server_is_alive_(true) {}
 
 int Server::start() {
-    server_is_alive_ = true;
     spawnWorkers();
 
-    while (server_is_alive_) {
-        std::cout << server_is_alive_ << std::endl;
+    while (!worker_handles_.empty()) {
+        std::cout << !worker_handles_.empty() << std::endl;
         std::vector<int> ready = waitForRequests();
         if (ready.size() > 0) {
             collectRequests(ready);
@@ -151,10 +150,9 @@ bool Server::completeRequest() {
             answerRequest(request.first, r);
 
             worker_handles_.erase(request.first);
-            if (worker_handles_.empty()) {
-                server_is_alive_ = false;
+            if (worker_handles_.empty())
                 return false;
-            }
+
             return true;
         } else {
             throw std::runtime_error("Server::completeRequest - invalid RequestType");
