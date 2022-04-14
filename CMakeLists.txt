@@ -31,7 +31,7 @@ else()
     target_compile_options(${LIB_NAME} PRIVATE -Ofast)
 endif()
 
-set(BUILD_EXAMPLES False)
+set(BUILD_EXAMPLES True)
 set(BUILD_TESTS True)
 
 if (BUILD_EXAMPLES)
