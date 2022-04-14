@@ -31,6 +31,7 @@ class Server
     std::unordered_map<int, long long>             timeouts_;
     std::chrono::steady_clock                      monotonic_clock_;
     TupleSpace                                     tuple_space_;
+    bool                                           server_is_alive_;
 
     void             spawnWorkers();
     std::vector<int> waitForRequests();

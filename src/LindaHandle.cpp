@@ -34,4 +34,8 @@ void Handle::out(Tuple &tuple) {
     Request::Out(tuple).send(out_pipe_);
 }
 
+void Handle::close(){
+    Request::Close().send(out_pipe_);
+}
+
 } // namespace linda
