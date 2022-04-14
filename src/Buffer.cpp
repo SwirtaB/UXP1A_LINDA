@@ -24,7 +24,7 @@ int readIntFromChars(char *ptr) {
     return value;
 }
 
-int readFloatFromChars(char *ptr) {
+float readFloatFromChars(char *ptr) {
     float value;
     char *value_ptr = static_cast<char *>(static_cast<void *>(&value));
     for (int i = 0; i < sizeof(float); ++i) {
@@ -101,7 +101,7 @@ int BufferDecoder::readInt() {
 }
 
 float BufferDecoder::readFloat() {
-    int res = readFloatFromChars(data_.data() + progress_);
+    float res = readFloatFromChars(data_.data() + progress_);
     progress_ += sizeof(float);
     return res;
 }
