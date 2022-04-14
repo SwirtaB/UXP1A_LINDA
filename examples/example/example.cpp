@@ -9,7 +9,7 @@
 
 void worker1(linda::Handle handle) {
     linda::Tuple t = linda::Tuple::Builder().String("Hello example!").Int(1).build();
-    handle.out(t);`
+    handle.out(t);
     handle.close();
 }
 
@@ -23,7 +23,7 @@ void worker2(linda::Handle handle) {
 void closingWorker(linda::Handle handle) {
     int sleep_time = 4;
     std::cout << "Closing worker sleeps for " << sleep_time << " seconds..." << std::endl;
-    sleep(4);
+    sleep(sleep_time);
     std::cout << "Closing worker closes the Linda Server." << std::endl;
     handle.close();
 }
