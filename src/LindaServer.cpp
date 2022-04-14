@@ -24,7 +24,7 @@
 namespace linda
 {
 
-Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers), server_is_alive_(true) {}
+Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers) {}
 
 int Server::start() {
     spawnWorkers();
