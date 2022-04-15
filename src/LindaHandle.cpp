@@ -1,8 +1,6 @@
 #include "LindaHandle.hpp"
-
 #include "LindaCommand.hpp"
 
-#include <iostream>
 #include <optional>
 
 namespace linda
@@ -32,6 +30,10 @@ std::optional<Tuple> Handle::in(TuplePattern &pattern, int timeout_ms) {
 
 void Handle::out(Tuple &tuple) {
     Request::Out(tuple).send(out_pipe_);
+}
+
+void Handle::close() {
+    Request::Close().send(out_pipe_);
 }
 
 } // namespace linda

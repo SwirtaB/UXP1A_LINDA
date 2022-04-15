@@ -1,34 +1,27 @@
 #include "LindaServer.hpp"
-
-#include "Debug.hpp"
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
-#include <fcntl.h>
 #include <functional>
-#include <iostream>
 #include <optional>
-#include <poll.h>
-#include <ratio>
 #include <stdexcept>
 #include <sys/poll.h>
 #include <unistd.h>
-#include <utility>
 
 namespace linda
 {
 
-Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers){};
+Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers) {}
 
-int Server::start() {
+void Server::start() {
     spawnWorkers();
-    while (true) {
+
+    while (!worker_handles_.empty()) {
         std::vector<int> ready = waitForRequests();
         if (ready.size() > 0) {
             collectRequests(ready);
@@ -143,6 +136,13 @@ bool Server::completeRequest() {
                 answerRequest(request.first, r);
                 return true;
             }
+        } else if (type == RequestType::Close) {
+            std::optional<Response> r = std::nullopt;
+            answerRequest(request.first, r);
+
+            worker_handles_.erase(request.first);
+
+            return true;
         } else {
             throw std::runtime_error("Server::completeRequest - invalid RequestType");
         }

@@ -1,11 +1,8 @@
 #include "LindaCommand.hpp"
 
 #include "Buffer.hpp"
-#include "Debug.hpp"
 #include "LindaTuple.hpp"
 
-#include <cstdio>
-#include <unistd.h>
 #include <vector>
 
 namespace linda
@@ -24,6 +21,10 @@ Request Request::In(TuplePattern &pattern, int timeout_ms) {
 
 Request Request::Out(Tuple &tuple) {
     return Request(RequestType::Out, 0, tuple.serialize());
+}
+
+Request Request::Close() {
+    return Request(RequestType::Close, 0, std::vector<char>());
 }
 
 void Request::send(int fd) {
