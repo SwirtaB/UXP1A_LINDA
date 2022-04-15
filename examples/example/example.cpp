@@ -2,7 +2,6 @@
 #include "LindaServer.hpp"
 #include "LindaTuple.hpp"
 
-#include <functional>
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -26,12 +25,14 @@ void closingWorker(linda::Handle handle) {
     sleep(sleep_time);
     std::cout << "Closing worker closes the Linda Server." << std::endl;
     handle.close();
-    std::cout << "dies" << std::endl;
 }
 
 int main() {
-    std::cout << "ehllo world " << std::endl;
-    auto ls = linda::Server(std::vector({std::function(closingWorker)}));
+    auto ls = linda::Server(std::vector({
+            std::function(closingWorker),
+            std::function(worker1),
+            std::function(worker2)})
+        );
     ls.start();
     return 0;
 }

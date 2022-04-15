@@ -1,11 +1,8 @@
 #include "LindaCommand.hpp"
 
 #include "Buffer.hpp"
-#include "Debug.hpp"
 #include "LindaTuple.hpp"
 
-#include <cstdio>
-#include <unistd.h>
 #include <vector>
 
 namespace linda

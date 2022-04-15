@@ -1,8 +1,6 @@
 #include "LindaHandle.hpp"
-
 #include "LindaCommand.hpp"
 
-#include <iostream>
 #include <optional>
 
 namespace linda
@@ -34,7 +32,7 @@ void Handle::out(Tuple &tuple) {
     Request::Out(tuple).send(out_pipe_);
 }
 
-void Handle::close(){
+void Handle::close() {
     Request::Close().send(out_pipe_);
 }
 

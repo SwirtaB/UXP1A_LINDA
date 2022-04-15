@@ -4,7 +4,6 @@
 #include "Debug.hpp"
 
 #include <optional>
-#include <ratio>
 #include <stdexcept>
 #include <string>
 #include <variant>

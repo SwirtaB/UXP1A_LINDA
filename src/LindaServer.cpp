@@ -1,25 +1,17 @@
 #include "LindaServer.hpp"
-
-#include "Debug.hpp"
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
-#include <fcntl.h>
 #include <functional>
-#include <iostream>
 #include <optional>
-#include <poll.h>
-#include <ratio>
 #include <stdexcept>
 #include <sys/poll.h>
 #include <unistd.h>
-#include <utility>
 
 namespace linda
 {
@@ -30,7 +22,6 @@ int Server::start() {
     spawnWorkers();
 
     while (!worker_handles_.empty()) {
-        std::cout << !worker_handles_.empty() << std::endl;
         std::vector<int> ready = waitForRequests();
         if (ready.size() > 0) {
             collectRequests(ready);
@@ -151,7 +142,7 @@ bool Server::completeRequest() {
 
             worker_handles_.erase(request.first);
             if (worker_handles_.empty())
-                return false;
+                exit(0);
 
             return true;
         } else {
