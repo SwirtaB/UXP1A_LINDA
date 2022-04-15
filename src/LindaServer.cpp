@@ -18,7 +18,7 @@ namespace linda
 
 Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers) {}
 
-int Server::start() {
+void Server::start() {
     spawnWorkers();
 
     while (!worker_handles_.empty()) {
@@ -141,8 +141,6 @@ bool Server::completeRequest() {
             answerRequest(request.first, r);
 
             worker_handles_.erase(request.first);
-            if (worker_handles_.empty())
-                exit(0);
 
             return true;
         } else {

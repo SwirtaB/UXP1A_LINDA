@@ -16,7 +16,7 @@ class Server
   public:
     Server(const std::vector<std::function<void(Handle)>> workers);
 
-    int start();
+    void start();
 
   private:
     struct WorkerHandle
