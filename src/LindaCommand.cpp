@@ -24,7 +24,7 @@ Request Request::Out(Tuple &tuple) {
 }
 
 Request Request::Close() {
-    return Request(RequestType::Close, 0, (new Tuple())->serialize());
+    return Request(RequestType::Close, 0, std::vector<char>());
 }
 
 void Request::send(int fd) {
