@@ -13,7 +13,7 @@ namespace linda
 
 Tuple::Builder::Builder() {}
 
-Tuple::Builder &Tuple::Builder::String(std::string &&s) {
+Tuple::Builder &Tuple::Builder::String(const std::string &s) {
     schema_.push_back(static_cast<char>(TupleType::String));
     values_.emplace_back(s);
     return *this;
@@ -90,7 +90,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyString() {
     return *this;
 }
 
-TuplePattern::Builder &TuplePattern::Builder::stringOf(RequirementType rt, std::string &&s) {
+TuplePattern::Builder &TuplePattern::Builder::stringOf(RequirementType rt, const std::string &s) {
     schema_.push_back(static_cast<char>(TupleType::String));
     requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), s));
     TupleValue t("asd");
@@ -190,7 +190,7 @@ std::vector<char> TuplePattern::serialize() {
     return encoder.encode();
 }
 
-TuplePattern TuplePattern::deserialize(std::vector<char> &data) {
+TuplePattern TuplePattern::deserialize(const std::vector<char> &data) {
     BufferDecoder         decoder = BufferDecoder::decode(data);
     TuplePattern::Builder builder;
     std::string           schema = decoder.readString();

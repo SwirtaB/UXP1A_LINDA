@@ -46,7 +46,7 @@ class Tuple
       public:
         Builder();
 
-        Builder &String(std::string &&s);
+        Builder &String(const std::string &s);
         Builder &Int(int i);
         Builder &Float(float f);
 
@@ -77,7 +77,7 @@ class TuplePattern
         Builder();
 
         Builder &anyString();
-        Builder &stringOf(RequirementType, std::string &&s);
+        Builder &stringOf(RequirementType, const std::string &s);
         Builder &anyInt();
         Builder &intOf(RequirementType, int i);
         Builder &anyFloat();
@@ -94,7 +94,7 @@ class TuplePattern
     bool               matches(Tuple &tuple);
 
     std::vector<char>   serialize();
-    static TuplePattern deserialize(std::vector<char> &data);
+    static TuplePattern deserialize(const std::vector<char> &data);
 
   private:
     std::string                   schema_;
