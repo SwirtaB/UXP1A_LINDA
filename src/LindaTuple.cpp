@@ -13,7 +13,7 @@ namespace linda
 
 Tuple::Builder::Builder() {}
 
-Tuple::Builder &Tuple::Builder::String(std::string &&s) {
+Tuple::Builder &Tuple::Builder::String(const std::string &s) {
     schema_.push_back(static_cast<char>(TupleType::String));
     values_.emplace_back(s);
     return *this;
@@ -90,9 +90,9 @@ TuplePattern::Builder &TuplePattern::Builder::anyString() {
     return *this;
 }
 
-TuplePattern::Builder &TuplePattern::Builder::stringOf(RequirementType rt, std::string &&s) {
+TuplePattern::Builder &TuplePattern::Builder::stringOf(RequirementType rt, const std::string &s) {
     schema_.push_back(static_cast<char>(TupleType::String));
-    requirements_.emplace_back(std::make_pair(rt, s));
+    requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), s));
     TupleValue t("asd");
     return *this;
 }
@@ -105,7 +105,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyInt() {
 
 TuplePattern::Builder &TuplePattern::Builder::intOf(RequirementType rt, int i) {
     schema_.push_back(static_cast<char>(TupleType::Int));
-    requirements_.emplace_back(std::make_pair(rt, i));
+    requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), i));
     return *this;
 }
 
@@ -117,7 +117,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyFloat() {
 
 TuplePattern::Builder &TuplePattern::Builder::floatOf(RequirementType rt, float f) {
     schema_.push_back(static_cast<char>(TupleType::Float));
-    requirements_.emplace_back(std::make_pair(rt, f));
+    requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), f));
     return *this;
 }
 
@@ -139,28 +139,28 @@ bool TuplePattern::matches(Tuple &tuple) {
     for (int i = 0; i < schema_.size(); ++i) {
         if (requirements_[i].has_value()) {
             auto &requirement = requirements_[i].value();
-            if (requirement.first == RequirementType::Eq) {
+            if (requirement.first == RequirementTypeSerializable::Eq) {
                 if (!(tuple.values()[i] == requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementType::Less) {
+            } else if (requirement.first == RequirementTypeSerializable::Less) {
                 if (!(tuple.values()[i] < requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementType::LessEq) {
+            } else if (requirement.first == RequirementTypeSerializable::LessEq) {
                 if (!(tuple.values()[i] <= requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementType::More) {
+            } else if (requirement.first == RequirementTypeSerializable::More) {
                 if (!(tuple.values()[i] > requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementType::MoreEq) {
+            } else if (requirement.first == RequirementTypeSerializable::MoreEq) {
                 if (!(tuple.values()[i] >= requirement.second)) {
                     return false;
                 }
             } else {
-                throw std::runtime_error("TuplePattern::matches - invalid RequirementType");
+                throw std::runtime_error("TuplePattern::matches - invalid requirement type");
             }
         }
     }
@@ -190,28 +190,28 @@ std::vector<char> TuplePattern::serialize() {
     return encoder.encode();
 }
 
-TuplePattern TuplePattern::deserialize(std::vector<char> &data) {
+TuplePattern TuplePattern::deserialize(const std::vector<char> &data) {
     BufferDecoder         decoder = BufferDecoder::decode(data);
     TuplePattern::Builder builder;
     std::string           schema = decoder.readString();
     for (char c : schema) {
-        TupleType type             = static_cast<TupleType>(c);
-        char      requirement_type = decoder.readChar();
+        TupleType                   type             = static_cast<TupleType>(c);
+        RequirementTypeSerializable requirement_type = static_cast<RequirementTypeSerializable>(decoder.readChar());
         if (type == TupleType::String) {
-            if (requirement_type != static_cast<char>(RequirementTypeSerializable::Any)) {
+            if (requirement_type != RequirementTypeSerializable::Any) {
                 builder.stringOf(static_cast<RequirementType>(requirement_type), decoder.readString());
             } else {
                 builder.anyString();
             }
         } else if (type == TupleType::Int) {
-            if (requirement_type != static_cast<char>(RequirementTypeSerializable::Any)) {
+            if (requirement_type != RequirementTypeSerializable::Any) {
                 builder.intOf(static_cast<RequirementType>(requirement_type), decoder.readInt());
             } else {
                 builder.anyInt();
             }
         } else if (type == TupleType::Float) {
-            if (requirement_type != static_cast<char>(RequirementTypeSerializable::Any)) {
-                builder.floatOf(static_cast<RequirementType>(requirement_type), decoder.readInt());
+            if (requirement_type != RequirementTypeSerializable::Any) {
+                builder.floatOf(static_cast<RequirementType>(requirement_type), decoder.readFloat());
             } else {
                 builder.anyFloat();
             }
