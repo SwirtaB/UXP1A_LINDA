@@ -1,4 +1,5 @@
 #include "LindaServer.hpp"
+
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
@@ -36,15 +37,12 @@ void Server::start() {
 void Server::spawnWorkers() {
     for (auto &worker : workers_) {
         int in_pipe[2];
-        int in_pipe_res = pipe(in_pipe);
-        if (in_pipe_res != 0) {
+        if (pipe(in_pipe)) {
             perror("Failed to construct in pipe");
             throw std::runtime_error("Failed to construct in pipe");
         }
-
         int out_pipe[2];
-        int out_pipe_res = pipe(out_pipe);
-        if (out_pipe_res != 0) {
+        if (pipe(out_pipe)) {
             perror("Failed to construct out pipe");
             throw std::runtime_error("Failed to construct out pipe");
         }
@@ -52,8 +50,15 @@ void Server::spawnWorkers() {
         worker_handles_.emplace(in_pipe[0], Server::WorkerHandle{.in_pipe = in_pipe[0], .out_pipe = out_pipe[1]});
 
         if (fork() == 0) {
+            if (close(in_pipe[0]) || close(out_pipe[1])) {
+                throw std::runtime_error("Server::spawnWorkers - failed to close server fd");
+            }
             worker(Handle(out_pipe[0], in_pipe[1]));
             exit(0);
+        } else {
+            if (close(in_pipe[1]) || close(out_pipe[0])) {
+                throw std::runtime_error("Server::spawnWorkers - failed to close worker fd");
+            }
         }
     }
 }
@@ -139,9 +144,10 @@ bool Server::completeRequest() {
         } else if (type == RequestType::Close) {
             std::optional<Response> r = std::nullopt;
             answerRequest(request.first, r);
-
+            if (close(worker_handles_[request.first].in_pipe) || close(worker_handles_[request.first].out_pipe)) {
+                throw std::runtime_error("Server::completeRequest - failed to close worker fd");
+            }
             worker_handles_.erase(request.first);
-
             return true;
         } else {
             throw std::runtime_error("Server::completeRequest - invalid RequestType");
