@@ -31,6 +31,7 @@ TEST(LINDA_TUPLE_SPACE_UNIT_TESTS, TupleSpace_consume__with_value) {
     ASSERT_TRUE(result1.has_value());
     ASSERT_EQ(result1.value().schema(), tuple.schema());
     ASSERT_EQ(result1.value().values(), tuple.values());
+    ASSERT_EQ(result1.value().serialize(), tuple.serialize());
     ASSERT_FALSE(result2.has_value());
 }
 
@@ -61,7 +62,9 @@ TEST(LINDA_TUPLE_SPACE_UNIT_TESTS, TupleSpace_read__with_value) {
     ASSERT_TRUE(result1.has_value());
     ASSERT_EQ(result1.value().schema(), tuple.schema());
     ASSERT_EQ(result1.value().values(), tuple.values());
+    ASSERT_EQ(result1.value().serialize(), tuple.serialize());
     ASSERT_TRUE(result2.has_value());
     ASSERT_EQ(result2.value().schema(), tuple.schema());
     ASSERT_EQ(result2.value().values(), tuple.values());
+    ASSERT_EQ(result2.value().serialize(), tuple.serialize());
 }

@@ -18,6 +18,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Request_Read) {
     ASSERT_EQ(request.getType(), linda::RequestType::Read);
     ASSERT_EQ(request.getTimeout(), timeout);
     ASSERT_EQ(request.getTuplePattern().schema(), pattern.schema());
+    ASSERT_EQ(request.getTuplePattern().serialize(), pattern.serialize());
 }
 
 TEST(LINDA_COMMAND_UNIT_TESTS, Request_In) {
@@ -33,6 +34,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Request_In) {
     ASSERT_EQ(request.getType(), linda::RequestType::In);
     ASSERT_EQ(request.getTimeout(), timeout);
     ASSERT_EQ(request.getTuplePattern().schema(), pattern.schema());
+    ASSERT_EQ(request.getTuplePattern().serialize(), pattern.serialize());
 }
 
 TEST(LINDA_COMMAND_UNIT_TESTS, Request_Out) {
@@ -46,6 +48,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Request_Out) {
     ASSERT_EQ(request.getType(), linda::RequestType::Out);
     ASSERT_EQ(request.getTuple().schema(), tuple.schema());
     ASSERT_EQ(request.getTuple().values(), tuple.values());
+    ASSERT_EQ(request.getTuple().serialize(), tuple.serialize());
 }
 
 TEST(LINDA_COMMAND_UNIT_TESTS, Request_Close) {
@@ -73,6 +76,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Request_send__to__Request_receive) {
     ASSERT_EQ(request.getType(), request_received.getType());
     ASSERT_EQ(request.getTimeout(), request_received.getTimeout());
     ASSERT_EQ(request.getTuplePattern().schema(), request_received.getTuplePattern().schema());
+    ASSERT_EQ(request.getTuplePattern().serialize(), request_received.getTuplePattern().serialize());
     close(fds[0]);
     close(fds[1]);
 }
@@ -96,6 +100,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Response_Result) {
     ASSERT_EQ(response.getType(), linda::ResponseType::Result);
     ASSERT_EQ(response.getTuple().schema(), tuple.schema());
     ASSERT_EQ(response.getTuple().values(), tuple.values());
+    ASSERT_EQ(response.getTuple().serialize(), tuple.serialize());
 }
 
 TEST(LINDA_COMMAND_UNIT_TESTS, Response_send__to__Response_receive) {
@@ -114,6 +119,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Response_send__to__Response_receive) {
     ASSERT_EQ(response.getType(), response_received.getType());
     ASSERT_EQ(response.getTuple().schema(), response_received.getTuple().schema());
     ASSERT_EQ(response.getTuple().values(), response_received.getTuple().values());
+    ASSERT_EQ(response.getTuple().serialize(), response_received.getTuple().serialize());
     close(fds[0]);
     close(fds[1]);
 }
