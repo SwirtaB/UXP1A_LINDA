@@ -11,7 +11,7 @@ class BufferEncoder
     void pushChar(char value);
     void pushInt(int value);
     void pushFloat(float value);
-    void pushString(const std::string &value);
+    void pushString(const std::string &);
     void pushData(const std::vector<char> &);
 
     std::vector<char> encode();

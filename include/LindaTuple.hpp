@@ -15,6 +15,16 @@ enum class TupleType : char
     Float  = 'f',
 };
 
+enum class RequirementTypeSerializable : char
+{
+    Any    = 0,
+    Eq     = 1,
+    Less   = 2,
+    LessEq = 3,
+    More   = 4,
+    MoreEq = 5,
+};
+
 enum class RequirementType : char
 {
     Eq     = 1,
@@ -24,19 +34,9 @@ enum class RequirementType : char
     MoreEq = 5,
 };
 
-enum class RequirementTypeSerializable : char
-{
-    Eq     = 1,
-    Less   = 2,
-    LessEq = 3,
-    More   = 4,
-    MoreEq = 5,
-    Any    = 6,
-};
-
 typedef std::variant<std::string, int, float> TupleValue;
 
-typedef std::optional<std::pair<RequirementType, TupleValue>> TupleRequirement;
+typedef std::optional<std::pair<RequirementTypeSerializable, TupleValue>> TupleRequirement;
 
 class Tuple
 {
@@ -46,7 +46,7 @@ class Tuple
       public:
         Builder();
 
-        Builder &String(std::string &&s);
+        Builder &String(const std::string &s);
         Builder &Int(int i);
         Builder &Float(float f);
 
@@ -77,7 +77,7 @@ class TuplePattern
         Builder();
 
         Builder &anyString();
-        Builder &stringOf(RequirementType, std::string &&s);
+        Builder &stringOf(RequirementType, const std::string &s);
         Builder &anyInt();
         Builder &intOf(RequirementType, int i);
         Builder &anyFloat();
@@ -94,7 +94,7 @@ class TuplePattern
     bool               matches(Tuple &tuple);
 
     std::vector<char>   serialize();
-    static TuplePattern deserialize(std::vector<char> &data);
+    static TuplePattern deserialize(const std::vector<char> &data);
 
   private:
     std::string                   schema_;
