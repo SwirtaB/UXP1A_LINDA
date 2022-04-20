@@ -16,13 +16,14 @@ class Server
   public:
     Server(const std::vector<std::function<void(Handle)>> workers);
 
-    void start();
+    int start();
 
   private:
     struct WorkerHandle
     {
         int in_pipe;
         int out_pipe;
+        int process_state_fd;
     };
 
     const std::vector<std::function<void(Handle)>> workers_;
