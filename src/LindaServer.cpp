@@ -12,6 +12,7 @@
 #include <optional>
 #include <stdexcept>
 #include <sys/poll.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #define CREATE_PROCESS_FD 434
 
@@ -63,7 +64,8 @@ void Server::spawnWorkers() {
                 in_pipe[0],
                 Server::WorkerHandle{.in_pipe          = in_pipe[0],
                                      .out_pipe         = out_pipe[1],
-                                     .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0)});
+                                     .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
+                                     .child_pid        = child_pid});
 
             if (close(in_pipe[1]) || close(out_pipe[0])) {
                 throw std::runtime_error("Server::spawnWorkers - failed to close worker fd");
@@ -82,7 +84,7 @@ std::vector<int> Server::waitForRequests() {
 
         pollfd process_fd;
         process_fd.fd = wh.second.process_state_fd;
-        pfd.events = POLLIN;
+        pfd.events    = POLLIN;
         pollfds.emplace_back(process_fd);
     }
 
@@ -99,6 +101,7 @@ std::vector<int> Server::waitForRequests() {
                 auto type = (int)(iter - pollfds.begin()) % 2;
 
                 if (type) {
+                    waitpid(worker_handles_[(iter - 1)->fd].child_pid, nullptr, WNOHANG);
                     worker_handles_.erase((iter - 1)->fd);
                 } else {
                     ready.emplace_back(iter->fd);

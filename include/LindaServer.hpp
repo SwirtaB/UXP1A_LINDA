@@ -24,6 +24,7 @@ class Server
         int in_pipe;
         int out_pipe;
         int process_state_fd;
+        int child_pid;
     };
 
     const std::vector<std::function<void(Handle)>> workers_;
