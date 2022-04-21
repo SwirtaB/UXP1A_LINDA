@@ -12,14 +12,16 @@
 #include <optional>
 #include <stdexcept>
 #include <sys/poll.h>
+#include <sys/wait.h>
 #include <unistd.h>
+#define CREATE_PROCESS_FD 434
 
 namespace linda
 {
 
 Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers) {}
 
-void Server::start() {
+int Server::start() {
     spawnWorkers();
 
     while (!worker_handles_.empty()) {
@@ -31,7 +33,9 @@ void Server::start() {
             } while (completeRequest());
         }
         timeoutRequests();
+        removeDeadWorkers();
     }
+    return 0;
 }
 
 void Server::spawnWorkers() {
@@ -47,19 +51,46 @@ void Server::spawnWorkers() {
             throw std::runtime_error("Failed to construct out pipe");
         }
 
-        worker_handles_.emplace(in_pipe[0], Server::WorkerHandle{.in_pipe = in_pipe[0], .out_pipe = out_pipe[1]});
+        int child_pid;
 
-        if (fork() == 0) {
+        if ((child_pid = fork()) == 0) {
             if (close(in_pipe[0]) || close(out_pipe[1])) {
                 throw std::runtime_error("Server::spawnWorkers - failed to close server fd");
             }
             worker(Handle(out_pipe[0], in_pipe[1]));
             exit(0);
         } else {
+
+            worker_handles_.emplace(
+                in_pipe[0],
+                Server::WorkerHandle{.in_pipe          = in_pipe[0],
+                                     .out_pipe         = out_pipe[1],
+                                     .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
+                                     .pid        = child_pid});
+
             if (close(in_pipe[1]) || close(out_pipe[0])) {
                 throw std::runtime_error("Server::spawnWorkers - failed to close worker fd");
             }
         }
+    }
+}
+
+void Server::removeDeadWorkers() {
+    std::vector<int> dead;
+    for (auto &handle : worker_handles_) {
+        int status;
+        pid_t return_pid = waitpid(handle.second.pid, &status, WNOHANG);
+        if (return_pid < 0) {
+            std::runtime_error("Server::removeDeadWorkers failed to waitpid");
+        } else if (return_pid == handle.second.pid) {
+            dead.emplace_back(handle.first);
+        }
+    }
+
+    for (int fd : dead) {
+        std::optional<Response> response = std::nullopt;
+        answerRequest(fd, response);
+        worker_handles_.erase(fd);
     }
 }
 
@@ -70,6 +101,11 @@ std::vector<int> Server::waitForRequests() {
         pfd.fd     = wh.second.in_pipe;
         pfd.events = POLLIN;
         pollfds.emplace_back(pfd);
+
+        pollfd process_fd;
+        process_fd.fd = wh.second.process_state_fd;
+        pfd.events    = POLLIN;
+        pollfds.emplace_back(process_fd);
     }
 
     int timeout  = findEarliestTimeout();
@@ -79,9 +115,9 @@ std::vector<int> Server::waitForRequests() {
         throw std::runtime_error("Failed to poll");
     } else if (poll_res > 0) {
         std::vector<int> ready;
-        for (pollfd pfd : pollfds) {
-            if (pfd.revents & POLLIN) {
-                ready.emplace_back(pfd.fd);
+        for (int i = 0; i < pollfds.size(); ++i) {
+            if (i % 2 == 0 && pollfds[i].revents & POLLIN) {
+                ready.emplace_back(pollfds[i].fd);
             }
         }
         return ready;

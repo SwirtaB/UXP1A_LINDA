@@ -16,13 +16,15 @@ class Server
   public:
     Server(const std::vector<std::function<void(Handle)>> workers);
 
-    void start();
+    int start();
 
   private:
     struct WorkerHandle
     {
         int in_pipe;
         int out_pipe;
+        int process_state_fd;
+        int pid;
     };
 
     const std::vector<std::function<void(Handle)>> workers_;
@@ -33,6 +35,7 @@ class Server
     TupleSpace                                     tuple_space_;
 
     void             spawnWorkers();
+    void             removeDeadWorkers();
     std::vector<int> waitForRequests();
     void             collectRequests(std::vector<int> &ready);
     void             timeoutRequests();
