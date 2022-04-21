@@ -191,7 +191,7 @@ TEST(BUFFER_UNIT_TESTS, BufferDecoder_readData) {
     BufferEncoder encoder;
 
     // when
-    std::vector<char> data({1, 5, 23, 52, 123, -13});
+    std::vector<char> data({1, 5, 23, 52, 123, 13});
     encoder.pushData(data);
     BufferDecoder decoder = BufferDecoder::decode(encoder.encode());
 
@@ -206,7 +206,7 @@ TEST(BUFFER_UNIT_TESTS, BufferEncoder_encode__to__BufferDecoder_decode) {
     int               intEncode    = 4325;
     float             floatEncode  = -142.34123;
     std::string       stringEncode = "asdfax ad";
-    std::vector<char> dataEncode({1, 42, 12, 123, -2});
+    std::vector<char> dataEncode({1, 42, 12, 123, 2});
 
     // when
     encoder.pushChar(charEncode);
@@ -231,7 +231,7 @@ TEST(BUFFER_UNIT_TESTS, BufferEncoder_send__to__BufferDecoder_recv) {
     int               intEncode    = 4325;
     float             floatEncode  = -142.34123;
     std::string       stringEncode = "asdfax ad";
-    std::vector<char> dataEncode({1, 42, 12, 123, -2});
+    std::vector<char> dataEncode({1, 42, 12, 123, 2});
 
     // when
     encoder.pushChar(charEncode);

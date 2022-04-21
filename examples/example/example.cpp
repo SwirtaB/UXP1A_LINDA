@@ -21,7 +21,7 @@ void worker2(linda::Handle handle) {
 }
 
 void closingWorker(linda::Handle handle) {
-    int sleep_time = 4;
+    int sleep_time = 300;
     std::cout << "Closing worker sleeps for " << sleep_time << " seconds..." << std::endl;
     sleep(sleep_time);
     std::cout << "Closing worker closes the Linda Server." << std::endl;

@@ -33,6 +33,7 @@ int Server::start() {
             } while (completeRequest());
         }
         timeoutRequests();
+        removeDeadWorkers();
     }
     return 0;
 }
@@ -65,12 +66,31 @@ void Server::spawnWorkers() {
                 Server::WorkerHandle{.in_pipe          = in_pipe[0],
                                      .out_pipe         = out_pipe[1],
                                      .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
-                                     .child_pid        = child_pid});
+                                     .pid        = child_pid});
 
             if (close(in_pipe[1]) || close(out_pipe[0])) {
                 throw std::runtime_error("Server::spawnWorkers - failed to close worker fd");
             }
         }
+    }
+}
+
+void Server::removeDeadWorkers() {
+    std::vector<int> dead;
+    for (auto &handle : worker_handles_) {
+        int status;
+        pid_t return_pid = waitpid(handle.second.pid, &status, WNOHANG);
+        if (return_pid < 0) {
+            std::runtime_error("Server::removeDeadWorkers failed to waitpid");
+        } else if (return_pid == handle.second.pid) {
+            dead.emplace_back(handle.first);
+        }
+    }
+
+    for (int fd : dead) {
+        std::optional<Response> response = std::nullopt;
+        answerRequest(fd, response);
+        worker_handles_.erase(fd);
     }
 }
 
@@ -95,17 +115,9 @@ std::vector<int> Server::waitForRequests() {
         throw std::runtime_error("Failed to poll");
     } else if (poll_res > 0) {
         std::vector<int> ready;
-
-        for (auto iter = pollfds.begin(); iter != pollfds.end(); iter++) {
-            if (iter->revents & POLLIN) {
-                auto type = (int)(iter - pollfds.begin()) % 2;
-
-                if (type) {
-                    waitpid(worker_handles_[(iter - 1)->fd].child_pid, nullptr, WNOHANG);
-                    worker_handles_.erase((iter - 1)->fd);
-                } else {
-                    ready.emplace_back(iter->fd);
-                }
+        for (int i = 0; i < pollfds.size(); ++i) {
+            if (i % 2 == 0 && pollfds[i].revents & POLLIN) {
+                ready.emplace_back(pollfds[i].fd);
             }
         }
         return ready;
