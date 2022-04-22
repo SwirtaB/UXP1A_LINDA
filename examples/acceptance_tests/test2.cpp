@@ -18,26 +18,34 @@ void worker1(linda::Handle handle) {
                             .intOf(linda::RequirementType::Eq, 2)
                             .build();
     tuple = handle.in(tuplePattern).value();
-    std::cout << "Worker1: got: " << std::get<int>(tuple.values()[0]) << std::get<int>(tuple.values()[1]) << std::endl;
+    std::cout << "Worker1: got: " << std::get<int>(tuple.values()[0]) << ", " << std::get<int>(tuple.values()[1])
+              << std::endl;
 
     std::cout << "Worker1: Waits for (string:'ocena', float:>4.0)" << std::endl;
     tuplePattern = linda::TuplePattern::Builder()
                        .stringOf(linda::RequirementType::Eq, "ocena")
-                       .floatOf(linda::RequirementType::More, 4.0)
+                       .floatOf(linda::RequirementTypeFloat::More, 4.0)
                        .build();
     tuple = handle.in(tuplePattern).value();
-    std::cout << "Worker1: got: " << std::get<std::string>(tuple.values()[0]) << std::get<float>(tuple.values()[1])
-              << std::endl;
+    std::cout << "Worker1: got: " << std::get<std::string>(tuple.values()[0]) << ", "
+              << std::get<float>(tuple.values()[1]) << std::endl;
 
     handle.close();
     std::cout << "Worker1: Finished" << std::endl;
 }
 
 void worker2(linda::Handle handle) {
-    std::cout << "Worker2: Waits for (string:*, 'ma', int:2, string:'koty)" << std::endl;
-    linda::TuplePattern tuplePattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::Eq, 1.0).build();
-    linda::Tuple        tuple        = handle.in(tuplePattern).value();
-    std::cout << "Worker2: got: " << std::get<std::string>(tuple.values()[0]) << std::endl;
+    std::cout << "Worker2: Waits for (string:*, 'string:ma', int:*, string:'koty)" << std::endl;
+    linda::TuplePattern tuplePattern = linda::TuplePattern::Builder()
+                                           .anyString()
+                                           .stringOf(linda::RequirementType::Eq, "ma")
+                                           .anyInt()
+                                           .stringOf(linda::RequirementType::Eq, "koty")
+                                           .build();
+    linda::Tuple tuple = handle.in(tuplePattern).value();
+    std::cout << "Worker2: got: " << std::get<std::string>(tuple.values()[0]) << ", "
+              << std::get<std::string>(tuple.values()[1]) << ", " << std::get<int>(tuple.values()[2]) << ", "
+              << std::get<std::string>(tuple.values()[3]) << std::endl;
 
     std::cout << "Worker2: Builds 5 tuples (1, 2), (1, 2), (1, 2), (3, 4), (5, 6)" << std::endl;
     for (int i = 0; i < 3; ++i) {
@@ -50,8 +58,8 @@ void worker2(linda::Handle handle) {
     tuple = linda::Tuple::Builder().Int(5).Int(6).build();
     handle.out(tuple);
 
-    std::cout << "Worker2: sleeps for 300 seconds" << std::endl;
-    sleep(300);
+    std::cout << "Worker2: sleeps for 60 seconds" << std::endl;
+    sleep(60);
 
     std::cout << "Worker2: Builds tuple ('ocena', 5.0)" << std::endl;
     tuple = linda::Tuple::Builder().String("ocena").Float(5.0).build();
@@ -68,7 +76,8 @@ void worker3(linda::Handle handle) {
                             .intOf(linda::RequirementType::Less, 3)
                             .build();
     auto tuple = handle.in(tuplePattern).value();
-    std::cout << "Worker3: got: " << std::get<int>(tuple.values()[0]) << std::get<int>(tuple.values()[1]) << std::endl;
+    std::cout << "Worker3: got: " << std::get<int>(tuple.values()[0]) << ", " << std::get<int>(tuple.values()[1])
+              << std::endl;
     handle.close();
     std::cout << "Worker3: Finished" << std::endl;
 }
@@ -80,7 +89,17 @@ void worker4(linda::Handle handle) {
                             .intOf(linda::RequirementType::Eq, 2)
                             .build();
     auto tuple = handle.in(tuplePattern).value();
-    std::cout << "Worker4: got: " << std::get<int>(tuple.values()[0]) << std::get<int>(tuple.values()[1]) << std::endl;
+    std::cout << "Worker4: got: " << std::get<int>(tuple.values()[0]) << ", " << std::get<int>(tuple.values()[1])
+              << std::endl;
     handle.close();
     std::cout << "Worker4: Finished" << std::endl;
+}
+
+int main() {
+    auto ls = linda::Server(
+        std::vector({std::function(worker1), std::function(worker2), std::function(worker3), std::function(worker4)}));
+    std::cout << "Starting lindaServer" << std::endl;
+    ls.start();
+    std::cout << "lindaServer closed" << std::endl;
+    return 0;
 }
