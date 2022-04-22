@@ -58,8 +58,8 @@ void worker2(linda::Handle handle) {
     tuple = linda::Tuple::Builder().Int(5).Int(6).build();
     handle.out(tuple);
 
-    std::cout << "Worker2: sleeps for 30 seconds" << std::endl;
-    sleep(30);
+    std::cout << "Worker2: sleeps for 10 seconds" << std::endl;
+    sleep(10);
 
     std::cout << "Worker2: Builds tuple ('ocena', 5.0)" << std::endl;
     tuple = linda::Tuple::Builder().String("ocena").Float(5.0).build();
