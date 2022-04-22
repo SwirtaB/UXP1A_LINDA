@@ -116,6 +116,19 @@ TuplePattern::Builder &TuplePattern::Builder::anyFloat() {
 }
 
 TuplePattern::Builder &TuplePattern::Builder::floatOf(RequirementType rt, float f) {
+    switch (rt) {
+        case RequirementType::Eq:
+            throw std::invalid_argument("ERROR: == operator is not allowed for float type!");
+            break;
+        case RequirementType::LessEq:
+            throw std::invalid_argument("ERROR: <= operator is not allowed for float type!");
+            break;
+        case RequirementType::MoreEq:
+            throw std::invalid_argument("ERROR: >= operator is not allowed for float type!");
+            break;
+        default:
+            break;
+    }
     schema_.push_back(static_cast<char>(TupleType::Float));
     requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), f));
     return *this;

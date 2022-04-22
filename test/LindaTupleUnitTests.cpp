@@ -1,6 +1,7 @@
 #include "LindaTuple.hpp"
 
 #include "gtest/gtest.h"
+#include <stdexcept>
 #include <string>
 #include <variant>
 
@@ -301,14 +302,8 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__Eq) {
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
     // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::Eq, 2.0).build();
-
-    // then
-    ASSERT_EQ(pattern.schema(), std::string("f"));
-    ASSERT_FALSE(pattern.matches(tuple_1));
-    ASSERT_TRUE(pattern.matches(tuple_2));
-    ASSERT_FALSE(pattern.matches(tuple_3));
-    ASSERT_FALSE(pattern.matches(tuple_string));
+    ASSERT_THROW(linda::TuplePattern::Builder().floatOf(linda::RequirementType::Eq, 2.0).build(),
+                 std::invalid_argument);
 }
 
 TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__Less) {
@@ -336,15 +331,9 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__LessEq) {
     linda::Tuple tuple_3      = linda::Tuple::Builder().Float(3.0).build();
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
-    // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::LessEq, 2.0).build();
-
     // then
-    ASSERT_EQ(pattern.schema(), std::string("f"));
-    ASSERT_TRUE(pattern.matches(tuple_1));
-    ASSERT_TRUE(pattern.matches(tuple_2));
-    ASSERT_FALSE(pattern.matches(tuple_3));
-    ASSERT_FALSE(pattern.matches(tuple_string));
+    ASSERT_THROW(linda::TuplePattern::Builder().floatOf(linda::RequirementType::LessEq, 2.0).build(),
+                 std::invalid_argument);
 }
 
 TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__More) {
@@ -372,15 +361,9 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__MoreEq) {
     linda::Tuple tuple_3      = linda::Tuple::Builder().Float(3.0).build();
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
-    // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::MoreEq, 2.0).build();
-
     // then
-    ASSERT_EQ(pattern.schema(), std::string("f"));
-    ASSERT_FALSE(pattern.matches(tuple_1));
-    ASSERT_TRUE(pattern.matches(tuple_2));
-    ASSERT_TRUE(pattern.matches(tuple_3));
-    ASSERT_FALSE(pattern.matches(tuple_string));
+    ASSERT_THROW(linda::TuplePattern::Builder().floatOf(linda::RequirementType::MoreEq, 2.0).build(),
+                 std::invalid_argument);
 }
 
 TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_serialize__to__TuplePattern_deserialize) {
@@ -390,7 +373,7 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_serialize__to__TuplePattern_deserializ
                                       .anyFloat()
                                       .anyString()
                                       .intOf(linda::RequirementType::Eq, 1)
-                                      .floatOf(linda::RequirementType::LessEq, -12.9)
+                                      .floatOf(linda::RequirementType::Less, -12.9)
                                       .stringOf(linda::RequirementType::More, "test")
                                       .build();
 
