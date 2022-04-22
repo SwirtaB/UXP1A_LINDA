@@ -8,7 +8,7 @@
 TEST(LINDA_COMMAND_UNIT_TESTS, Request_Read) {
     // given
     linda::TuplePattern pattern =
-        linda::TuplePattern::Builder().anyInt().floatOf(linda::RequirementType::Eq, 1.23).anyString().build();
+        linda::TuplePattern::Builder().anyInt().floatOf(linda::RequirementTypeFloat::LessEq, 1.23).anyString().build();
     int timeout = 1432;
 
     // when
@@ -24,7 +24,7 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Request_Read) {
 TEST(LINDA_COMMAND_UNIT_TESTS, Request_In) {
     // given
     linda::TuplePattern pattern =
-        linda::TuplePattern::Builder().anyInt().floatOf(linda::RequirementType::Eq, 1.23).anyString().build();
+        linda::TuplePattern::Builder().anyInt().floatOf(linda::RequirementTypeFloat::MoreEq, 1.23).anyString().build();
     int timeout = 1432;
 
     // when

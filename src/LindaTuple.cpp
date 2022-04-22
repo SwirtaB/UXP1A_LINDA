@@ -115,7 +115,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyFloat() {
     return *this;
 }
 
-TuplePattern::Builder &TuplePattern::Builder::floatOf(RequirementType rt, float f) {
+TuplePattern::Builder &TuplePattern::Builder::floatOf(RequirementTypeFloat rt, float f) {
     schema_.push_back(static_cast<char>(TupleType::Float));
     requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), f));
     return *this;
@@ -211,7 +211,11 @@ TuplePattern TuplePattern::deserialize(const std::vector<char> &data) {
             }
         } else if (type == TupleType::Float) {
             if (requirement_type != RequirementTypeSerializable::Any) {
-                builder.floatOf(static_cast<RequirementType>(requirement_type), decoder.readFloat());
+                if (requirement_type == RequirementTypeSerializable::Eq) {
+                    throw std::runtime_error("TuplePattern::deserialize Eq requirement for float pattern");
+                } else {
+                    builder.floatOf(static_cast<RequirementTypeFloat>(requirement_type), decoder.readFloat());
+                }
             } else {
                 builder.anyFloat();
             }
