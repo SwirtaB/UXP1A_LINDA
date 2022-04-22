@@ -293,24 +293,6 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_anyFloat) {
     ASSERT_FALSE(pattern.matches(tuple_string));
 }
 
-TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__Eq) {
-    // given
-    linda::Tuple tuple_1      = linda::Tuple::Builder().Float(1.0).build();
-    linda::Tuple tuple_2      = linda::Tuple::Builder().Float(2.0).build();
-    linda::Tuple tuple_3      = linda::Tuple::Builder().Float(3.0).build();
-    linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
-
-    // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::Eq, 2.0).build();
-
-    // then
-    ASSERT_EQ(pattern.schema(), std::string("f"));
-    ASSERT_FALSE(pattern.matches(tuple_1));
-    ASSERT_TRUE(pattern.matches(tuple_2));
-    ASSERT_FALSE(pattern.matches(tuple_3));
-    ASSERT_FALSE(pattern.matches(tuple_string));
-}
-
 TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__Less) {
     // given
     linda::Tuple tuple_1      = linda::Tuple::Builder().Float(1.0).build();
@@ -319,7 +301,8 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__Less) {
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
     // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::Less, 2.0).build();
+    linda::TuplePattern pattern =
+        linda::TuplePattern::Builder().floatOf(linda::RequirementTypeFloat::Less, 2.0).build();
 
     // then
     ASSERT_EQ(pattern.schema(), std::string("f"));
@@ -337,7 +320,8 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__LessEq) {
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
     // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::LessEq, 2.0).build();
+    linda::TuplePattern pattern =
+        linda::TuplePattern::Builder().floatOf(linda::RequirementTypeFloat::LessEq, 2.0).build();
 
     // then
     ASSERT_EQ(pattern.schema(), std::string("f"));
@@ -355,7 +339,8 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__More) {
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
     // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::More, 2.0).build();
+    linda::TuplePattern pattern =
+        linda::TuplePattern::Builder().floatOf(linda::RequirementTypeFloat::More, 2.0).build();
 
     // then
     ASSERT_EQ(pattern.schema(), std::string("f"));
@@ -373,7 +358,8 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_floatOf__MoreEq) {
     linda::Tuple tuple_string = linda::Tuple::Builder().String("test").build();
 
     // when
-    linda::TuplePattern pattern = linda::TuplePattern::Builder().floatOf(linda::RequirementType::MoreEq, 2.0).build();
+    linda::TuplePattern pattern =
+        linda::TuplePattern::Builder().floatOf(linda::RequirementTypeFloat::MoreEq, 2.0).build();
 
     // then
     ASSERT_EQ(pattern.schema(), std::string("f"));
@@ -390,7 +376,7 @@ TEST(LINDA_TUPLE_UNIT_TESTS, TuplePattern_serialize__to__TuplePattern_deserializ
                                       .anyFloat()
                                       .anyString()
                                       .intOf(linda::RequirementType::Eq, 1)
-                                      .floatOf(linda::RequirementType::LessEq, -12.9)
+                                      .floatOf(linda::RequirementTypeFloat::LessEq, -12.9)
                                       .stringOf(linda::RequirementType::More, "test")
                                       .build();
 
