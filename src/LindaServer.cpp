@@ -4,16 +4,17 @@
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
 
+#include <asm-generic/errno-base.h>
 #include <chrono>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
+#include <errno.h>
 #include <functional>
 #include <optional>
 #include <stdexcept>
 #include <sys/poll.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #define CREATE_PROCESS_FD 434
 
 namespace linda
@@ -66,7 +67,7 @@ void Server::spawnWorkers() {
                 Server::WorkerHandle{.in_pipe          = in_pipe[0],
                                      .out_pipe         = out_pipe[1],
                                      .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
-                                     .pid        = child_pid});
+                                     .pid              = child_pid});
 
             if (close(in_pipe[1]) || close(out_pipe[0])) {
                 throw std::runtime_error("Server::spawnWorkers - failed to close worker fd");
@@ -78,7 +79,7 @@ void Server::spawnWorkers() {
 void Server::removeDeadWorkers() {
     std::vector<int> dead;
     for (auto &handle : worker_handles_) {
-        int status;
+        int   status;
         pid_t return_pid = waitpid(handle.second.pid, &status, WNOHANG);
         if (return_pid < 0) {
             std::runtime_error("Server::removeDeadWorkers failed to waitpid");
@@ -180,9 +181,10 @@ bool Server::completeRequest() {
         } else if (type == RequestType::Close) {
             std::optional<Response> r = std::nullopt;
             answerRequest(request.first, r);
-            if (close(worker_handles_[request.first].in_pipe) || close(worker_handles_[request.first].out_pipe)) {
-                throw std::runtime_error("Server::completeRequest - failed to close worker fd");
-            }
+
+            close(worker_handles_[request.first].in_pipe);
+            close(worker_handles_[request.first].out_pipe);
+
             worker_handles_.erase(request.first);
             return true;
         } else {
