@@ -131,7 +131,7 @@ TuplePattern TuplePattern::Builder::build() {
 const std::string &TuplePattern::schema() {
     return schema_;
 }
-const std::vector<TupleRequirement> & TuplePattern::requirements(){
+const std::vector<TupleRequirement> &TuplePattern::requirements() {
     return requirements_;
 }
 

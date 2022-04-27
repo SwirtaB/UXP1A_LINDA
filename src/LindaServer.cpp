@@ -18,8 +18,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #define CREATE_PROCESS_FD 434
-#include <iostream>
-#include <variant>
 namespace linda
 {
 
