@@ -3,6 +3,7 @@
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
+#include "Logger.hpp"
 
 #include <asm-generic/errno-base.h>
 #include <chrono>
@@ -15,14 +16,18 @@
 #include <stdexcept>
 #include <sys/poll.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #define CREATE_PROCESS_FD 434
-
+#include <iostream>
+#include <variant>
 namespace linda
 {
 
 Server::Server(const std::vector<std::function<void(Handle)>> workers) : workers_(workers) {}
 
 int Server::start() {
+    logger_.openFile();
+    logger_.log() << __FUNCTION__ << "Linda Server starting\n";
     spawnWorkers();
 
     while (!worker_handles_.empty()) {
@@ -68,6 +73,9 @@ void Server::spawnWorkers() {
                                      .out_pipe         = out_pipe[1],
                                      .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
                                      .pid              = child_pid});
+            logger_.log() << __FUNCTION__ << " Spawning worker : in_pipe = " << std::to_string(in_pipe[0])
+                          << ", out_pipe = " << std::to_string(out_pipe[1]) << ", pid = " << std::to_string(child_pid)
+                          << std::endl;
 
             if (close(in_pipe[1]) || close(out_pipe[0])) {
                 throw std::runtime_error("Server::spawnWorkers - failed to close worker fd");
@@ -84,6 +92,7 @@ void Server::removeDeadWorkers() {
         if (return_pid < 0) {
             std::runtime_error("Server::removeDeadWorkers failed to waitpid");
         } else if (return_pid == handle.second.pid) {
+            logger_.log() << __FUNCTION__ << " Removing dead worker with pid = " << return_pid << std::endl;
             dead.emplace_back(handle.first);
         }
     }
@@ -118,20 +127,27 @@ std::vector<int> Server::waitForRequests() {
         std::vector<int> ready;
         for (int i = 0; i < pollfds.size(); ++i) {
             if (i % 2 == 0 && pollfds[i].revents & POLLIN) {
+                logger_.log() << __FUNCTION__ << " Got request from file descriptor = " << std::to_string(pollfds[i].fd)
+                              << std::endl;
                 ready.emplace_back(pollfds[i].fd);
             }
         }
         return ready;
     } else {
+        logger_.log() << __FUNCTION__ << " No new reqests.\n";
         return std::vector<int>();
     }
 }
 
 void Server::collectRequests(std::vector<int> &ready) {
     for (int fd : ready) {
+        logger_.log() << __FUNCTION__ << " Collecting request from file descriptor = " << std::to_string(fd)
+                      << std::endl;
         Request request = Request::receive(fd);
         requests_.emplace_back(fd, request);
         if (request.getType() != RequestType::Out) {
+            logger_.log() << __FUNCTION__ << " Inserting timeout = " << std::to_string(request.getTimeout())
+                          << " to file descriptor = " << std::to_string(fd) << std::endl;
             insertTimeout(fd, request.getTimeout());
         }
     }
@@ -148,6 +164,8 @@ void Server::timeoutRequests() {
     }
     for (int fd : timed_out) {
         std::optional<Response> r = Response::Timeout();
+        logger_.log() << __FUNCTION__ << " Timing out request from file descriptor = " << std::to_string(fd)
+                      << std::endl;
         answerRequest(fd, r);
     }
 }
@@ -158,8 +176,14 @@ bool Server::completeRequest() {
         RequestType type    = request.second.getType();
         if (type == RequestType::Out) {
             Tuple t = request.second.getTuple();
+            t.schema();
+            t.values();
             tuple_space_.put(t);
             std::optional<Response> r = std::nullopt;
+            logger_.log() << __FUNCTION__
+                          << " Completing OUT request from file descriptor = " << std::to_string(request.first)
+                          << " with schema = " << t.schema() << ", and values = " << logger_.toString(t.values())
+                          << std::endl;
             answerRequest(request.first, r);
             return true;
         } else if (type == RequestType::Read) {
@@ -167,6 +191,10 @@ bool Server::completeRequest() {
             std::optional<Tuple> get = tuple_space_.get(tp);
             if (get.has_value()) {
                 std::optional<Response> r = Response::Result(get.value());
+                logger_.log() << __FUNCTION__
+                              << " Completing READ request from file descriptor = " << std::to_string(request.first)
+                              << " with tuple pattern = " << tp.schema()
+                              << " and with requirements = " << logger_.toString(tp.requirements()) << std::endl;
                 answerRequest(request.first, r);
                 return true;
             }
@@ -175,12 +203,19 @@ bool Server::completeRequest() {
             std::optional<Tuple> consume = tuple_space_.consume(tp);
             if (consume.has_value()) {
                 std::optional<Response> r = Response::Result(consume.value());
+                logger_.log() << __FUNCTION__
+                              << " Completing IN request from file descriptor = " << std::to_string(request.first)
+                              << " with tuple pattern = " << tp.schema()
+                              << " and with requirements = " << logger_.toString(tp.requirements()) << std::endl;
                 answerRequest(request.first, r);
                 return true;
             }
         } else if (type == RequestType::Close) {
             std::optional<Response> r = std::nullopt;
             answerRequest(request.first, r);
+            logger_.log() << __FUNCTION__
+                          << " Completing CLOSE request from file descriptor = " << std::to_string(request.first)
+                          << std::endl;
 
             close(worker_handles_[request.first].in_pipe);
             close(worker_handles_[request.first].out_pipe);
@@ -197,12 +232,15 @@ bool Server::completeRequest() {
 long long Server::getNowMs() {
     auto m = monotonic_clock_.now().time_since_epoch();
     auto d = std::chrono::duration_cast<std::chrono::milliseconds>(m);
+    // logger_.log() << __FUNCTION__ << " miliseconds = " << d.count() << std::endl;
     return d.count();
 }
 
 void Server::insertTimeout(int fd, int timeout_ms) {
     if (timeout_ms > 0) {
         long long timeout = getNowMs() + timeout_ms;
+        logger_.log() << __FUNCTION__ << " Inserting timeout = " << std::to_string(timeout_ms)
+                      << " to file descriptor = " << std::to_string(fd) << std::endl;
         timeouts_.emplace(fd, timeout);
     }
 }
@@ -215,8 +253,11 @@ int Server::findEarliestTimeout() {
         }
     }
     if (earliest == LONG_LONG_MAX) {
+        logger_.log() << __FUNCTION__ << " Earliest timeout = -1\n";
         return -1;
     } else {
+        logger_.log() << __FUNCTION__ << " Earliest timeout = " << std::to_string(std::max(earliest - getNowMs(), 0LL))
+                      << std::endl;
         return std::max(earliest - getNowMs(), 0LL);
     }
 }
@@ -224,6 +265,9 @@ int Server::findEarliestTimeout() {
 void Server::answerRequest(int fd, std::optional<Response> &response) {
     for (int i = 0; i < requests_.size(); ++i) {
         if (requests_[i].first == fd) {
+            logger_.log() << __FUNCTION__
+                          << " Erasing request from requests_ list for file descriptor = " << std::to_string(fd)
+                          << std::endl;
             requests_.erase(requests_.begin() + i);
             break;
         }
@@ -231,6 +275,10 @@ void Server::answerRequest(int fd, std::optional<Response> &response) {
     timeouts_.erase(fd);
     if (response.has_value()) {
         int out_fd = worker_handles_[fd].out_pipe;
+        logger_.log() << __FUNCTION__ << " Answering request from file descriptor = " << std::to_string(fd)
+                      << " to file descriptor " << std::to_string(out_fd)
+                      << " with schema = " << response.value().getTuple().schema()
+                      << ", and values = " << logger_.toString(response.value().getTuple().values()) << std::endl;
         response.value().send(out_fd);
     }
 }

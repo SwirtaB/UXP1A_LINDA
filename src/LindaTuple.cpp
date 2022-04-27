@@ -131,6 +131,9 @@ TuplePattern TuplePattern::Builder::build() {
 const std::string &TuplePattern::schema() {
     return schema_;
 }
+const std::vector<TupleRequirement> & TuplePattern::requirements(){
+    return requirements_;
+}
 
 bool TuplePattern::matches(Tuple &tuple) {
     if (schema_ != tuple.schema()) {
