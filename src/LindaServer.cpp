@@ -115,11 +115,6 @@ std::vector<int> Server::waitForRequests() {
         pfd.fd     = wh.second.in_pipe;
         pfd.events = POLLIN;
         pollfds.emplace_back(pfd);
-
-        pollfd process_fd;
-        process_fd.fd = wh.second.process_state_fd;
-        pfd.events    = POLLIN;
-        pollfds.emplace_back(process_fd);
     }
 
     int timeout  = findEarliestTimeout();
@@ -129,11 +124,20 @@ std::vector<int> Server::waitForRequests() {
         throw std::runtime_error("Failed to poll");
     } else if (poll_res > 0) {
         std::vector<int> ready;
-        for (int i = 0; i < pollfds.size(); ++i) {
-            if (i % 2 == 0 && pollfds[i].revents & POLLIN) {
-                logger_.log() << __FUNCTION__ << " Got request from file descriptor = " << std::to_string(pollfds[i].fd)
+        for (pollfd &pfd : pollfds) {
+            if (pfd.revents & POLLERR) {
+                logger_.log() << __FUNCTION__ << " Got POLLERR from file descriptor = " << std::to_string(pfd.fd)
                               << std::endl;
-                ready.emplace_back(pollfds[i].fd);
+            } else if (pfd.revents & POLLHUP) {
+                logger_.log() << __FUNCTION__ << " Got POLLHUP from file descriptor = " << std::to_string(pfd.fd)
+                              << std::endl;
+            } else if (pfd.revents & POLLNVAL) {
+                logger_.log() << __FUNCTION__ << " Got POLLINVAL from file descriptor = " << std::to_string(pfd.fd)
+                              << std::endl;
+            } else if (pfd.revents & POLLIN) {
+                logger_.log() << __FUNCTION__ << " Got request from file descriptor = " << std::to_string(pfd.fd)
+                              << std::endl;
+                ready.emplace_back(pfd.fd);
             }
         }
         return ready;
@@ -265,13 +269,7 @@ void Server::answerRequest(int fd, std::optional<Response> &response) {
         int out_fd = worker_handles_[fd].out_pipe;
 
         logger_.log() << __FUNCTION__ << " Answering request from file descriptor = " << std::to_string(fd)
-                      << " to file descriptor " << std::to_string(out_fd);
-        if (response->getType() == ResponseType::Result) {
-            logger_.log() << __FUNCTION__ << " with schema = " << response.value().getTuple().schema()
-                          << ", and values = " << logger_.toString(response.value().getTuple().values()) << std::endl;
-        } else if (response->getType() == ResponseType::Timeout) {
-            logger_.log() << __FUNCTION__ << " with Timeout" << std::endl;
-        }
+                      << " to file descriptor " << std::to_string(out_fd) << std::endl;
 
         response.value().send(out_fd);
     }

@@ -77,9 +77,11 @@ void BufferEncoder::send(int fd) {
     int sent = 0;
     while (sent < out.size()) {
         int res = write(fd, out.data() + sent, out.size() - sent);
-        if (res <= 0) {
+        if (res < 0) {
             perror("failed to write buffer");
             throw std::runtime_error("failed to write buffer");
+        } else if (res == 0) {
+            throw std::runtime_error("failed to write buffer (wrote 0)");
         } else {
             sent += res;
         }
@@ -136,9 +138,11 @@ BufferDecoder BufferDecoder::recv(int fd) {
     int   recv     = 0;
     while (recv < sizeof(int)) {
         int res = read(fd, size_ptr + recv, sizeof(int) - recv);
-        if (res <= 0) {
+        if (res < 0) {
             perror("failed to read buffer size");
             throw std::runtime_error("failed to read buffer size");
+        } else if (res == 0) {
+            throw std::runtime_error("failed to read buffer size (read 0)");
         } else {
             recv += res;
         }
@@ -148,9 +152,11 @@ BufferDecoder BufferDecoder::recv(int fd) {
     recv = 0;
     while (recv < size) {
         int res = read(fd, decoder.data_.data() + recv, size - recv);
-        if (res <= 0) {
+        if (res < 0) {
             perror("failed to read buffer data");
             throw std::runtime_error("failed to read buffer data");
+        } else if (res == 0) {
+            throw std::runtime_error("failed to read buffer data (read 0)");
         } else {
             recv += res;
         }
