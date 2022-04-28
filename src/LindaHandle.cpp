@@ -1,7 +1,9 @@
 #include "LindaHandle.hpp"
+
 #include "LindaCommand.hpp"
 
 #include <optional>
+#include <stdexcept>
 
 namespace linda
 {
@@ -13,8 +15,10 @@ std::optional<Tuple> Handle::read(TuplePattern &pattern, int timeout_ms) {
     Response response = Response::receive(in_pipe_);
     if (response.getType() == ResponseType::Timeout) {
         return std::nullopt;
-    } else {
+    } else if (response.getType() == ResponseType::Result) {
         return response.getTuple();
+    } else {
+        throw std::runtime_error("Handle::read - got invalid response");
     }
 }
 
@@ -23,17 +27,27 @@ std::optional<Tuple> Handle::in(TuplePattern &pattern, int timeout_ms) {
     Response response = Response::receive(in_pipe_);
     if (response.getType() == ResponseType::Timeout) {
         return std::nullopt;
-    } else {
+    } else if (response.getType() == ResponseType::Result) {
         return response.getTuple();
+    } else {
+        throw std::runtime_error("Handle::in - got invalid response");
     }
 }
 
 void Handle::out(Tuple &tuple) {
     Request::Out(tuple).send(out_pipe_);
+    Response response = Response::receive(in_pipe_);
+    if (response.getType() != ResponseType::Done) {
+        throw std::runtime_error("Handle::out - got invalid response");
+    }
 }
 
 void Handle::close() {
     Request::Close().send(out_pipe_);
+    Response response = Response::receive(in_pipe_);
+    if (response.getType() != ResponseType::Done) {
+        throw std::runtime_error("Handle::close - got invalid response");
+    }
 }
 
 } // namespace linda

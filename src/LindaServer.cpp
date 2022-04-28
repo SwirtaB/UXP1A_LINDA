@@ -5,7 +5,6 @@
 #include "LindaTuple.hpp"
 #include "Logger.hpp"
 
-#include <asm-generic/errno-base.h>
 #include <chrono>
 #include <climits>
 #include <cstdio>
@@ -174,10 +173,8 @@ bool Server::completeRequest() {
         RequestType type    = request.second.getType();
         if (type == RequestType::Out) {
             Tuple t = request.second.getTuple();
-            t.schema();
-            t.values();
             tuple_space_.put(t);
-            std::optional<Response> r = std::nullopt;
+            std::optional<Response> r = Response::Done();
             logger_.log() << __FUNCTION__
                           << " Completing OUT request from file descriptor = " << std::to_string(request.first)
                           << " with schema = " << t.schema() << ", and values = " << logger_.toString(t.values())
@@ -209,7 +206,7 @@ bool Server::completeRequest() {
                 return true;
             }
         } else if (type == RequestType::Close) {
-            std::optional<Response> r = std::nullopt;
+            std::optional<Response> r = Response::Done();
             answerRequest(request.first, r);
             logger_.log() << __FUNCTION__
                           << " Completing CLOSE request from file descriptor = " << std::to_string(request.first)
@@ -273,10 +270,19 @@ void Server::answerRequest(int fd, std::optional<Response> &response) {
     timeouts_.erase(fd);
     if (response.has_value()) {
         int out_fd = worker_handles_[fd].out_pipe;
+
         logger_.log() << __FUNCTION__ << " Answering request from file descriptor = " << std::to_string(fd)
-                      << " to file descriptor " << std::to_string(out_fd)
-                      << " with schema = " << response.value().getTuple().schema()
-                      << ", and values = " << logger_.toString(response.value().getTuple().values()) << std::endl;
+                      << " to file descriptor " << std::to_string(out_fd);
+        if (response->getType() == ResponseType::Result) {
+            logger_.log() << __FUNCTION__ << " with schema = " << response.value().getTuple().schema()
+                          << ", and values = " << logger_.toString(response.value().getTuple().values());
+        } else if (response->getType() == ResponseType::Timeout) {
+            logger_.log() << __FUNCTION__ << " with Timeout";
+        } else if (response->getType() == ResponseType::Done) {
+            logger_.log() << __FUNCTION__ << " with Done";
+        }
+        logger_.log() << __FUNCTION__ << std::endl;
+
         response.value().send(out_fd);
     }
 }

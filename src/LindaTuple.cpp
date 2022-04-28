@@ -92,7 +92,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyString() {
 
 TuplePattern::Builder &TuplePattern::Builder::stringOf(RequirementType rt, const std::string &s) {
     schema_.push_back(static_cast<char>(TupleType::String));
-    requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), s));
+    requirements_.emplace_back(std::make_pair(rt, s));
     TupleValue t("asd");
     return *this;
 }
@@ -105,7 +105,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyInt() {
 
 TuplePattern::Builder &TuplePattern::Builder::intOf(RequirementType rt, int i) {
     schema_.push_back(static_cast<char>(TupleType::Int));
-    requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), i));
+    requirements_.emplace_back(std::make_pair(rt, i));
     return *this;
 }
 
@@ -117,7 +117,7 @@ TuplePattern::Builder &TuplePattern::Builder::anyFloat() {
 
 TuplePattern::Builder &TuplePattern::Builder::floatOf(RequirementTypeFloat rt, float f) {
     schema_.push_back(static_cast<char>(TupleType::Float));
-    requirements_.emplace_back(std::make_pair(static_cast<RequirementTypeSerializable>(rt), f));
+    requirements_.emplace_back(std::make_pair(static_cast<RequirementType>(rt), f));
     return *this;
 }
 
@@ -142,23 +142,23 @@ bool TuplePattern::matches(Tuple &tuple) {
     for (int i = 0; i < schema_.size(); ++i) {
         if (requirements_[i].has_value()) {
             auto &requirement = requirements_[i].value();
-            if (requirement.first == RequirementTypeSerializable::Eq) {
+            if (requirement.first == RequirementType::Eq) {
                 if (!(tuple.values()[i] == requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementTypeSerializable::Less) {
+            } else if (requirement.first == RequirementType::Less) {
                 if (!(tuple.values()[i] < requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementTypeSerializable::LessEq) {
+            } else if (requirement.first == RequirementType::LessEq) {
                 if (!(tuple.values()[i] <= requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementTypeSerializable::More) {
+            } else if (requirement.first == RequirementType::More) {
                 if (!(tuple.values()[i] > requirement.second)) {
                     return false;
                 }
-            } else if (requirement.first == RequirementTypeSerializable::MoreEq) {
+            } else if (requirement.first == RequirementType::MoreEq) {
                 if (!(tuple.values()[i] >= requirement.second)) {
                     return false;
                 }

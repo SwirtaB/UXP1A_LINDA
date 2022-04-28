@@ -2,8 +2,8 @@
 
 #include "LindaTuple.hpp"
 
-#include <bits/stdc++.h>
 #include <chrono>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 #include <ratio>
@@ -58,35 +58,36 @@ std::string Logger::toString(const std::vector<TupleValue> values) {
     std::string result;
     for (auto value : values) {
         if (std::holds_alternative<std::string>(value))
-            result += std::get<std::string>(value) + "| ";
+            result += std::get<std::string>(value) + " | ";
         else if (std::holds_alternative<int>(value))
-            result += std::to_string(std::get<int>(value)) + "| ";
+            result += std::to_string(std::get<int>(value)) + " | ";
         else if (std::holds_alternative<float>(value))
-            result += std::to_string(std::get<float>(value)) + "| ";
+            result += std::to_string(std::get<float>(value)) + " | ";
         else
             throw std::runtime_error("Logger::toString[TupleValue] - variant check not exhaustive");
     }
     return result;
 }
 
-std::string Logger::toString(const std::vector<TupleRequirement> &requirements_) {
+std::string Logger::toString(const std::vector<TupleRequirement> &requirements) {
     std::string result;
-    for (auto requirement : requirements_) {
+    for (auto requirement : requirements) {
         if (requirement.has_value()) {
-            if (requirement.value().first == RequirementTypeSerializable::Any)
-                result += "Any ";
-            else if (requirement.value().first == RequirementTypeSerializable::Eq)
-                result += "Eq " + to_string(requirement.value().second) + "| ";
-            else if (requirement.value().first == RequirementTypeSerializable::Less)
-                result += "Less " + to_string(requirement.value().second) + "| ";
-            else if (requirement.value().first == RequirementTypeSerializable::LessEq)
-                result += "LessEq " + to_string(requirement.value().second) + "| ";
-            else if (requirement.value().first == RequirementTypeSerializable::More)
-                result += "More " + to_string(requirement.value().second) + "| ";
-            else if (requirement.value().first == RequirementTypeSerializable::MoreEq)
-                result += "MoreEq " + to_string(requirement.value().second) + "| ";
-            else
+            if (requirement.value().first == RequirementType::Eq) {
+                result += "Eq " + to_string(requirement.value().second) + " | ";
+            } else if (requirement.value().first == RequirementType::Less) {
+                result += "Less " + to_string(requirement.value().second) + " | ";
+            } else if (requirement.value().first == RequirementType::LessEq) {
+                result += "LessEq " + to_string(requirement.value().second) + " | ";
+            } else if (requirement.value().first == RequirementType::More) {
+                result += "More " + to_string(requirement.value().second) + " | ";
+            } else if (requirement.value().first == RequirementType::MoreEq) {
+                result += "MoreEq " + to_string(requirement.value().second) + " | ";
+            } else {
                 throw std::runtime_error("Logger::toString[TupleRequirement] - variant check not exhaustive");
+            }
+        } else {
+            result += "Any | ";
         }
     }
     return result;

@@ -8,9 +8,9 @@ namespace linda
 
 enum class RequestType : char
 {
-    Read = 'r',
-    In   = 'i',
-    Out  = 'o',
+    Read  = 'r',
+    In    = 'i',
+    Out   = 'o',
     Close = 'c'
 };
 
@@ -18,6 +18,7 @@ enum class ResponseType : char
 {
     Timeout = 'r',
     Result  = 't',
+    Done    = 'd',
 };
 
 class Request
@@ -49,6 +50,7 @@ class Response
   public:
     static Response Timeout();
     static Response Result(Tuple &tuple);
+    static Response Done();
 
     void            send(int fd);
     static Response receive(int fd);

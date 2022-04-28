@@ -71,6 +71,10 @@ Response Response::Result(Tuple &tuple) {
     return Response(ResponseType::Result, tuple.serialize());
 }
 
+Response Response::Done() {
+    return Response(ResponseType::Done);
+}
+
 void Response::send(int fd) {
     BufferEncoder encoder;
     encoder.pushChar(static_cast<char>(type_));
