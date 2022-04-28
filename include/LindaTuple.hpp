@@ -44,7 +44,7 @@ enum class RequirementTypeFloat : char
 
 typedef std::variant<std::string, int, float> TupleValue;
 
-typedef std::optional<std::pair<RequirementTypeSerializable, TupleValue>> TupleRequirement;
+typedef std::optional<std::pair<RequirementType, TupleValue>> TupleRequirement;
 
 class Tuple
 {
@@ -98,8 +98,9 @@ class TuplePattern
         std::vector<TupleRequirement> requirements_;
     };
 
-    const std::string &schema();
-    bool               matches(Tuple &tuple);
+    const std::string                   &schema();
+    const std::vector<TupleRequirement> &requirements();
+    bool                                 matches(Tuple &tuple);
 
     std::vector<char>   serialize();
     static TuplePattern deserialize(const std::vector<char> &data);

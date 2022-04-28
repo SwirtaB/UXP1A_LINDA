@@ -3,6 +3,7 @@
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTupleSpace.hpp"
+#include "Logger.hpp"
 
 #include <chrono>
 #include <functional>
@@ -26,7 +27,7 @@ class Server
         int process_state_fd;
         int pid;
     };
-
+    Logger                                         logger_;
     const std::vector<std::function<void(Handle)>> workers_;
     std::unordered_map<int, WorkerHandle>          worker_handles_;
     std::vector<std::pair<int, Request>>           requests_;
