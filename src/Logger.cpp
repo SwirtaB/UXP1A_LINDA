@@ -54,7 +54,7 @@ std::string Logger::timeNow() {
     result += std::to_string(ms % 1000);
     return result;
 }
-std::string Logger::toString(const std::vector<TupleValue> values) {
+std::string Logger::toString(const std::vector<TupleValue> &values) {
     std::string result;
     for (auto value : values) {
         if (std::holds_alternative<std::string>(value))
@@ -74,15 +74,15 @@ std::string Logger::toString(const std::vector<TupleRequirement> &requirements) 
     for (auto requirement : requirements) {
         if (requirement.has_value()) {
             if (requirement.value().first == RequirementType::Eq) {
-                result += "Eq " + to_string(requirement.value().second) + " | ";
+                result += "Eq " + toString(requirement.value().second) + " | ";
             } else if (requirement.value().first == RequirementType::Less) {
-                result += "Less " + to_string(requirement.value().second) + " | ";
+                result += "Less " + toString(requirement.value().second) + " | ";
             } else if (requirement.value().first == RequirementType::LessEq) {
-                result += "LessEq " + to_string(requirement.value().second) + " | ";
+                result += "LessEq " + toString(requirement.value().second) + " | ";
             } else if (requirement.value().first == RequirementType::More) {
-                result += "More " + to_string(requirement.value().second) + " | ";
+                result += "More " + toString(requirement.value().second) + " | ";
             } else if (requirement.value().first == RequirementType::MoreEq) {
-                result += "MoreEq " + to_string(requirement.value().second) + " | ";
+                result += "MoreEq " + toString(requirement.value().second) + " | ";
             } else {
                 throw std::runtime_error("Logger::toString[TupleRequirement] - variant check not exhaustive");
             }
@@ -93,7 +93,7 @@ std::string Logger::toString(const std::vector<TupleRequirement> &requirements) 
     return result;
 }
 
-std::string Logger::to_string(linda::TupleValue value) {
+std::string Logger::toString(const linda::TupleValue &value) {
     if (std::holds_alternative<std::string>(value))
         return std::get<std::string>(value) + " ";
     else if (std::holds_alternative<int>(value))

@@ -3,7 +3,6 @@
 #include "LindaCommand.hpp"
 #include "LindaHandle.hpp"
 #include "LindaTuple.hpp"
-#include "Logger.hpp"
 
 #include <chrono>
 #include <climits>
@@ -132,7 +131,7 @@ std::vector<int> Server::waitForRequests() {
         }
         return ready;
     } else {
-        logger_.log() << __FUNCTION__ << " No new reqests.\n";
+        // logger_.log() << __FUNCTION__ << " No new reqests.\n";
         return std::vector<int>();
     }
 }
@@ -228,7 +227,6 @@ bool Server::completeRequest() {
 long long Server::getNowMs() {
     auto m = monotonic_clock_.now().time_since_epoch();
     auto d = std::chrono::duration_cast<std::chrono::milliseconds>(m);
-    // logger_.log() << __FUNCTION__ << " miliseconds = " << d.count() << std::endl;
     return d.count();
 }
 
