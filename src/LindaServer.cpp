@@ -65,11 +65,8 @@ void Server::spawnWorkers() {
         } else {
 
             worker_handles_.emplace(
-                in_pipe[0],
-                Server::WorkerHandle{.in_pipe          = in_pipe[0],
-                                     .out_pipe         = out_pipe[1],
-                                     .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
-                                     .pid              = child_pid});
+                in_pipe[0], Server::WorkerHandle{.in_pipe = in_pipe[0], .out_pipe = out_pipe[1], .pid = child_pid});
+
             logger_.log() << __FUNCTION__ << " Spawning worker : in_pipe = " << std::to_string(in_pipe[0])
                           << ", out_pipe = " << std::to_string(out_pipe[1]) << ", pid = " << std::to_string(child_pid)
                           << std::endl;
