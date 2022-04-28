@@ -1,5 +1,6 @@
 #include "Buffer.hpp"
 
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 #include <unistd.h>
@@ -77,6 +78,7 @@ void BufferEncoder::send(int fd) {
     while (sent < out.size()) {
         int res = write(fd, out.data() + sent, out.size() - sent);
         if (res <= 0) {
+            perror("failed to write buffer");
             throw std::runtime_error("failed to write buffer");
         } else {
             sent += res;
@@ -135,6 +137,7 @@ BufferDecoder BufferDecoder::recv(int fd) {
     while (recv < sizeof(int)) {
         int res = read(fd, size_ptr + recv, sizeof(int) - recv);
         if (res <= 0) {
+            perror("failed to read buffer size");
             throw std::runtime_error("failed to read buffer size");
         } else {
             recv += res;
@@ -146,6 +149,7 @@ BufferDecoder BufferDecoder::recv(int fd) {
     while (recv < size) {
         int res = read(fd, decoder.data_.data() + recv, size - recv);
         if (res <= 0) {
+            perror("failed to read buffer data");
             throw std::runtime_error("failed to read buffer data");
         } else {
             recv += res;

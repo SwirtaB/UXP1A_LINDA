@@ -36,9 +36,9 @@ class Server
     TupleSpace                                     tuple_space_;
 
     void             spawnWorkers();
-    void             removeDeadWorkers();
+    void             removeDeadWorkers(std::vector<int> &ready);
     std::vector<int> waitForRequests();
-    void             collectRequests(std::vector<int> &ready);
+    void             collectRequests(const std::vector<int> &ready);
     void             timeoutRequests();
     bool             completeRequest();
 

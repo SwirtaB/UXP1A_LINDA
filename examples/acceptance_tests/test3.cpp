@@ -25,7 +25,7 @@ void worker1(linda::Handle handle) {
                             .build();
 
     tuple = handle.in(tuplePattern).value();
-    std::cout << "Worker1: Consumed tuple" << std::get<std::string>(tuple.values()[0]) << ", "
+    std::cout << "Worker1: Consumed tuple " << std::get<std::string>(tuple.values()[0]) << ", "
               << std::get<float>(tuple.values()[1]) << ", " << std::get<std::string>(tuple.values()[2]) << ", "
               << std::get<float>(tuple.values()[3]) << std::endl;
 
@@ -36,7 +36,6 @@ void worker1(linda::Handle handle) {
     tuple = linda::Tuple::Builder().String("exit").Int(0).build();
     handle.out(tuple);
 
-    handle.close();
     std::cout << "Worker1: Finished" << std::endl;
 }
 void worker2(linda::Handle handle) {
@@ -61,7 +60,6 @@ void worker2(linda::Handle handle) {
                        .build();
     tuple = handle.read(tuplePattern).value();
 
-    handle.close();
     std::cout << "Worker2: Finished" << std::endl;
 }
 void worker3(linda::Handle handle) {
@@ -86,7 +84,6 @@ void worker3(linda::Handle handle) {
                        .build();
     tuple = handle.read(tuplePattern).value();
 
-    handle.close();
     std::cout << "Worker3: Finished" << std::endl;
 }
 void worker4(linda::Handle handle) {
@@ -111,7 +108,6 @@ void worker4(linda::Handle handle) {
                        .build();
     tuple = handle.read(tuplePattern).value();
 
-    handle.close();
     std::cout << "Worker4: Finished" << std::endl;
 }
 

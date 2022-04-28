@@ -97,24 +97,3 @@ TEST(LINDA_HANDLE_UNIT_TESTS, Handle_out) {
     close(out_fds[0]);
     close(out_fds[1]);
 }
-
-TEST(LINDA_HANDLE_UNIT_TESTS, Handle_close) {
-    // given
-    int in_fds[2];
-    pipe(in_fds);
-    int out_fds[2];
-    pipe(out_fds);
-    linda::Handle handle(in_fds[0], out_fds[1]);
-
-    // when
-    std::thread    thread([&] { handle.close(); });
-    linda::Request request = linda::Request::receive(out_fds[0]);
-    thread.join();
-
-    // then
-    ASSERT_EQ(request.getType(), linda::RequestType::Close);
-    close(in_fds[0]);
-    close(in_fds[1]);
-    close(out_fds[0]);
-    close(out_fds[1]);
-}

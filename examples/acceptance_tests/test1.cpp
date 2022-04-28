@@ -11,7 +11,6 @@ void worker1(linda::Handle handle) {
     std::cout << "Worker1: Building tuple (\"Hello world!\")" << std::endl;
     linda::Tuple t = linda::Tuple::Builder().String("Hello example!").build();
     handle.out(t);
-    handle.close();
 }
 
 void worker2(linda::Handle handle) {
@@ -19,7 +18,6 @@ void worker2(linda::Handle handle) {
     linda::TuplePattern tp = linda::TuplePattern::Builder().anyString().build();
     linda::Tuple        t  = handle.in(tp).value();
     std::cout << "Worker2: got: " << std::get<std::string>(t.values()[0]) << std::endl;
-    handle.close();
 }
 
 int main() {
