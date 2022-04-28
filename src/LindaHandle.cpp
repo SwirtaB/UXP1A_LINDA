@@ -36,10 +36,6 @@ std::optional<Tuple> Handle::in(TuplePattern &pattern, int timeout_ms) {
 
 void Handle::out(Tuple &tuple) {
     Request::Out(tuple).send(out_pipe_);
-    Response response = Response::receive(in_pipe_);
-    if (response.getType() != ResponseType::Done) {
-        throw std::runtime_error("Handle::out - got invalid response");
-    }
 }
 
 void Handle::close() {

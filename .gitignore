@@ -17,3 +17,6 @@ lib/
 
 #reports
 *.pdf
+
+#logs
+logFiles/

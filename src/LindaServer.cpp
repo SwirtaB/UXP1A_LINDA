@@ -38,6 +38,7 @@ int Server::start() {
         timeoutRequests();
         removeDeadWorkers();
     }
+    sleep(1);
     return 0;
 }
 
@@ -174,7 +175,7 @@ bool Server::completeRequest() {
         if (type == RequestType::Out) {
             Tuple t = request.second.getTuple();
             tuple_space_.put(t);
-            std::optional<Response> r = Response::Done();
+            std::optional<Response> r = std::nullopt;
             logger_.log() << __FUNCTION__
                           << " Completing OUT request from file descriptor = " << std::to_string(request.first)
                           << " with schema = " << t.schema() << ", and values = " << logger_.toString(t.values())

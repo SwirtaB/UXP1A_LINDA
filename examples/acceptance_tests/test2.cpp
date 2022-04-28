@@ -26,7 +26,9 @@ void worker1(linda::Handle handle) {
                        .stringOf(linda::RequirementType::Eq, "ocena")
                        .floatOf(linda::RequirementTypeFloat::More, 4.0)
                        .build();
+    std::cout << "AAAAAAA" << std::endl;
     tuple = handle.in(tuplePattern).value();
+    std::cout << "BBBBBBB" << std::endl;
     std::cout << "Worker1: got: " << std::get<std::string>(tuple.values()[0]) << ", "
               << std::get<float>(tuple.values()[1]) << std::endl;
 
