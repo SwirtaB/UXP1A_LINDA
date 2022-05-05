@@ -82,8 +82,10 @@ TEST(LINDA_HANDLE_UNIT_TESTS, Handle_out) {
     linda::Handle handle(in_fds[0], out_fds[1]);
 
     // when
-    std::thread    thread([&] { handle.out(tuple); });
-    linda::Request request = linda::Request::receive(out_fds[0]);
+    std::thread     thread([&] { handle.out(tuple); });
+    linda::Request  request  = linda::Request::receive(out_fds[0]);
+    linda::Response response = linda::Response::Done();
+    response.send(in_fds[1]);
     thread.join();
 
     // then

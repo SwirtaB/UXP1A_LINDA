@@ -29,7 +29,7 @@ int Server::start() {
 
     while (!worker_handles_.empty()) {
         std::vector<int> ready = waitForRequests();
-        removeDeadWorkers(ready);
+        removeDeadWorkers();
         if (ready.size() > 0) {
             collectRequests(ready);
             do {
@@ -78,7 +78,7 @@ void Server::spawnWorkers() {
     }
 }
 
-void Server::removeDeadWorkers(std::vector<int> &ready) {
+void Server::removeDeadWorkers() {
     std::vector<int> dead;
     for (auto &handle : worker_handles_) {
         int   status;
@@ -95,13 +95,6 @@ void Server::removeDeadWorkers(std::vector<int> &ready) {
         std::optional<Response> response = std::nullopt;
         answerRequest(fd, response);
         worker_handles_.erase(fd);
-
-        for (int i = 0; i < ready.size(); ++i) {
-            if (ready[i] == fd) {
-                ready.erase(ready.begin() + i);
-                break;
-            }
-        }
     }
 }
 
