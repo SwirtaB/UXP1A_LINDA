@@ -23,10 +23,6 @@ Request Request::Out(Tuple &tuple) {
     return Request(RequestType::Out, 0, tuple.serialize());
 }
 
-Request Request::Close() {
-    return Request(RequestType::Close, 0, std::vector<char>());
-}
-
 void Request::send(int fd) {
     BufferEncoder encoder;
     encoder.pushChar(static_cast<char>(type_));

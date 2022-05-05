@@ -24,9 +24,9 @@ class Server
     {
         int in_pipe;
         int out_pipe;
-        int process_state_fd;
         int pid;
     };
+
     Logger                                         logger_;
     const std::vector<std::function<void(Handle)>> workers_;
     std::unordered_map<int, WorkerHandle>          worker_handles_;
@@ -38,7 +38,7 @@ class Server
     void             spawnWorkers();
     void             removeDeadWorkers();
     std::vector<int> waitForRequests();
-    void             collectRequests(std::vector<int> &ready);
+    void             collectRequests(const std::vector<int> &ready);
     void             timeoutRequests();
     bool             completeRequest();
 

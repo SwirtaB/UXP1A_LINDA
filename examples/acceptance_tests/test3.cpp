@@ -14,6 +14,7 @@ void worker1(linda::Handle handle) {
     handle.out(tuple);
 
     std::cout << "Worker1: Sleep for 10 seconds" << std::endl;
+    std::flush(std::cout);
     sleep(10);
 
     std::cout << "Worker1: Waiting to consume tuple ('pi', 3.14159265359, 'e', 2.71828182846)" << std::endl;
@@ -25,19 +26,20 @@ void worker1(linda::Handle handle) {
                             .build();
 
     tuple = handle.in(tuplePattern).value();
-    std::cout << "Worker1: Consumed tuple" << std::get<std::string>(tuple.values()[0]) << ", "
+    std::cout << "Worker1: Consumed tuple " << std::get<std::string>(tuple.values()[0]) << ", "
               << std::get<float>(tuple.values()[1]) << ", " << std::get<std::string>(tuple.values()[2]) << ", "
               << std::get<float>(tuple.values()[3]) << std::endl;
 
     std::cout << "Worker1: Sleep for 10 seconds" << std::endl;
+    std::flush(std::cout);
     sleep(10);
 
     std::cout << "Worker1: Building tuple ('exit', 0)" << std::endl;
     tuple = linda::Tuple::Builder().String("exit").Int(0).build();
     handle.out(tuple);
 
-    handle.close();
     std::cout << "Worker1: Finished" << std::endl;
+    std::flush(std::cout);
 }
 void worker2(linda::Handle handle) {
     auto tuplePattern = linda::TuplePattern::Builder()
@@ -61,8 +63,8 @@ void worker2(linda::Handle handle) {
                        .build();
     tuple = handle.read(tuplePattern).value();
 
-    handle.close();
     std::cout << "Worker2: Finished" << std::endl;
+    std::flush(std::cout);
 }
 void worker3(linda::Handle handle) {
     auto tuplePattern = linda::TuplePattern::Builder()
@@ -86,8 +88,8 @@ void worker3(linda::Handle handle) {
                        .build();
     tuple = handle.read(tuplePattern).value();
 
-    handle.close();
     std::cout << "Worker3: Finished" << std::endl;
+    std::flush(std::cout);
 }
 void worker4(linda::Handle handle) {
     auto tuplePattern = linda::TuplePattern::Builder()
@@ -111,8 +113,8 @@ void worker4(linda::Handle handle) {
                        .build();
     tuple = handle.read(tuplePattern).value();
 
-    handle.close();
     std::cout << "Worker4: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 int main() {
@@ -120,6 +122,7 @@ int main() {
         std::vector({std::function(worker1), std::function(worker2), std::function(worker3), std::function(worker4)}));
     std::cout << "Starting lindaServer" << std::endl;
     ls.start();
+
     std::cout << "lindaServer closed" << std::endl;
     return 0;
 }

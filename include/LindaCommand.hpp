@@ -11,7 +11,6 @@ enum class RequestType : char
     Read  = 'r',
     In    = 'i',
     Out   = 'o',
-    Close = 'c'
 };
 
 enum class ResponseType : char
@@ -27,7 +26,6 @@ class Request
     static Request Read(TuplePattern &pattern, int timeout_ms);
     static Request In(TuplePattern &pattern, int timeout_ms);
     static Request Out(Tuple &tuple);
-    static Request Close();
 
     void           send(int fd);
     static Request receive(int fd);

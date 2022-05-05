@@ -51,14 +51,6 @@ TEST(LINDA_COMMAND_UNIT_TESTS, Request_Out) {
     ASSERT_EQ(request.getTuple().serialize(), tuple.serialize());
 }
 
-TEST(LINDA_COMMAND_UNIT_TESTS, Request_Close) {
-    // when
-    linda::Request request = linda::Request::Close();
-
-    // then
-    ASSERT_EQ(request.getType(), linda::RequestType::Close);
-}
-
 TEST(LINDA_COMMAND_UNIT_TESTS, Request_send__to__Request_receive) {
     // given
     linda::TuplePattern pattern =

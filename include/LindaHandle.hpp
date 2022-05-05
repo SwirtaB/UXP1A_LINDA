@@ -15,7 +15,6 @@ class Handle
     std::optional<Tuple> read(TuplePattern &pattern, int timeout_ms = 0);
     std::optional<Tuple> in(TuplePattern &pattern, int timeout_ms = 0);
     void                 out(Tuple &tuple);
-    void                 close();
 
   private:
     int in_pipe_;

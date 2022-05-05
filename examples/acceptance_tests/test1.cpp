@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <unistd.h>
 
@@ -11,7 +12,9 @@ void worker1(linda::Handle handle) {
     std::cout << "Worker1: Building tuple (\"Hello world!\")" << std::endl;
     linda::Tuple t = linda::Tuple::Builder().String("Hello example!").build();
     handle.out(t);
-    handle.close();
+
+    std::cout << "Worker1: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 void worker2(linda::Handle handle) {
@@ -19,7 +22,9 @@ void worker2(linda::Handle handle) {
     linda::TuplePattern tp = linda::TuplePattern::Builder().anyString().build();
     linda::Tuple        t  = handle.in(tp).value();
     std::cout << "Worker2: got: " << std::get<std::string>(t.values()[0]) << std::endl;
-    handle.close();
+
+    std::cout << "Worker2: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 int main() {
