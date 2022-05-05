@@ -74,15 +74,15 @@ std::string Logger::toString(const std::vector<TupleRequirement> &requirements) 
     for (auto requirement : requirements) {
         if (requirement.has_value()) {
             if (requirement.value().first == RequirementType::Eq) {
-                result += "Eq " + toString(requirement.value().second) + " | ";
+                result += "Eq " + toString(requirement.value().second) + "| ";
             } else if (requirement.value().first == RequirementType::Less) {
-                result += "Less " + toString(requirement.value().second) + " | ";
+                result += "Less " + toString(requirement.value().second) + "| ";
             } else if (requirement.value().first == RequirementType::LessEq) {
-                result += "LessEq " + toString(requirement.value().second) + " | ";
+                result += "LessEq " + toString(requirement.value().second) + "| ";
             } else if (requirement.value().first == RequirementType::More) {
-                result += "More " + toString(requirement.value().second) + " | ";
+                result += "More " + toString(requirement.value().second) + "| ";
             } else if (requirement.value().first == RequirementType::MoreEq) {
-                result += "MoreEq " + toString(requirement.value().second) + " | ";
+                result += "MoreEq " + toString(requirement.value().second) + "| ";
             } else {
                 throw std::runtime_error("Logger::toString[TupleRequirement] - variant check not exhaustive");
             }

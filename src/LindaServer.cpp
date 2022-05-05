@@ -16,6 +16,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #define CREATE_PROCESS_FD 434
+
 namespace linda
 {
 
@@ -28,6 +29,7 @@ int Server::start() {
 
     while (!worker_handles_.empty()) {
         std::vector<int> ready = waitForRequests();
+        removeDeadWorkers();
         if (ready.size() > 0) {
             collectRequests(ready);
             do {
@@ -35,9 +37,7 @@ int Server::start() {
             } while (completeRequest());
         }
         timeoutRequests();
-        removeDeadWorkers();
     }
-    sleep(1);
     return 0;
 }
 
@@ -65,11 +65,8 @@ void Server::spawnWorkers() {
         } else {
 
             worker_handles_.emplace(
-                in_pipe[0],
-                Server::WorkerHandle{.in_pipe          = in_pipe[0],
-                                     .out_pipe         = out_pipe[1],
-                                     .process_state_fd = (int)syscall(CREATE_PROCESS_FD, child_pid, 0),
-                                     .pid              = child_pid});
+                in_pipe[0], Server::WorkerHandle{.in_pipe = in_pipe[0], .out_pipe = out_pipe[1], .pid = child_pid});
+
             logger_.log() << __FUNCTION__ << " Spawning worker : in_pipe = " << std::to_string(in_pipe[0])
                           << ", out_pipe = " << std::to_string(out_pipe[1]) << ", pid = " << std::to_string(child_pid)
                           << std::endl;
@@ -108,11 +105,6 @@ std::vector<int> Server::waitForRequests() {
         pfd.fd     = wh.second.in_pipe;
         pfd.events = POLLIN;
         pollfds.emplace_back(pfd);
-
-        pollfd process_fd;
-        process_fd.fd = wh.second.process_state_fd;
-        pfd.events    = POLLIN;
-        pollfds.emplace_back(process_fd);
     }
 
     int timeout  = findEarliestTimeout();
@@ -122,21 +114,29 @@ std::vector<int> Server::waitForRequests() {
         throw std::runtime_error("Failed to poll");
     } else if (poll_res > 0) {
         std::vector<int> ready;
-        for (int i = 0; i < pollfds.size(); ++i) {
-            if (i % 2 == 0 && pollfds[i].revents & POLLIN) {
-                logger_.log() << __FUNCTION__ << " Got request from file descriptor = " << std::to_string(pollfds[i].fd)
+        for (pollfd &pfd : pollfds) {
+            if (pfd.revents & POLLERR) {
+                logger_.log() << __FUNCTION__ << " Got POLLERR from file descriptor = " << std::to_string(pfd.fd)
                               << std::endl;
-                ready.emplace_back(pollfds[i].fd);
+            } else if (pfd.revents & POLLHUP) {
+                logger_.log() << __FUNCTION__ << " Got POLLHUP from file descriptor = " << std::to_string(pfd.fd)
+                              << std::endl;
+            } else if (pfd.revents & POLLNVAL) {
+                logger_.log() << __FUNCTION__ << " Got POLLINVAL from file descriptor = " << std::to_string(pfd.fd)
+                              << std::endl;
+            } else if (pfd.revents & POLLIN) {
+                logger_.log() << __FUNCTION__ << " Got request from file descriptor = " << std::to_string(pfd.fd)
+                              << std::endl;
+                ready.emplace_back(pfd.fd);
             }
         }
         return ready;
     } else {
-        // logger_.log() << __FUNCTION__ << " No new reqests.\n";
         return std::vector<int>();
     }
 }
 
-void Server::collectRequests(std::vector<int> &ready) {
+void Server::collectRequests(const std::vector<int> &ready) {
     for (int fd : ready) {
         logger_.log() << __FUNCTION__ << " Collecting request from file descriptor = " << std::to_string(fd)
                       << std::endl;
@@ -174,7 +174,7 @@ bool Server::completeRequest() {
         if (type == RequestType::Out) {
             Tuple t = request.second.getTuple();
             tuple_space_.put(t);
-            std::optional<Response> r = std::nullopt;
+            std::optional<Response> r = Response::Done();
             logger_.log() << __FUNCTION__
                           << " Completing OUT request from file descriptor = " << std::to_string(request.first)
                           << " with schema = " << t.schema() << ", and values = " << logger_.toString(t.values())
@@ -205,18 +205,6 @@ bool Server::completeRequest() {
                 answerRequest(request.first, r);
                 return true;
             }
-        } else if (type == RequestType::Close) {
-            std::optional<Response> r = Response::Done();
-            answerRequest(request.first, r);
-            logger_.log() << __FUNCTION__
-                          << " Completing CLOSE request from file descriptor = " << std::to_string(request.first)
-                          << std::endl;
-
-            close(worker_handles_[request.first].in_pipe);
-            close(worker_handles_[request.first].out_pipe);
-
-            worker_handles_.erase(request.first);
-            return true;
         } else {
             throw std::runtime_error("Server::completeRequest - invalid RequestType");
         }
@@ -271,16 +259,7 @@ void Server::answerRequest(int fd, std::optional<Response> &response) {
         int out_fd = worker_handles_[fd].out_pipe;
 
         logger_.log() << __FUNCTION__ << " Answering request from file descriptor = " << std::to_string(fd)
-                      << " to file descriptor " << std::to_string(out_fd);
-        if (response->getType() == ResponseType::Result) {
-            logger_.log() << __FUNCTION__ << " with schema = " << response.value().getTuple().schema()
-                          << ", and values = " << logger_.toString(response.value().getTuple().values());
-        } else if (response->getType() == ResponseType::Timeout) {
-            logger_.log() << __FUNCTION__ << " with Timeout";
-        } else if (response->getType() == ResponseType::Done) {
-            logger_.log() << __FUNCTION__ << " with Done";
-        }
-        logger_.log() << __FUNCTION__ << std::endl;
+                      << " to file descriptor " << std::to_string(out_fd) << std::endl;
 
         response.value().send(out_fd);
     }

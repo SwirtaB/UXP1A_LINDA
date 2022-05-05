@@ -26,14 +26,12 @@ void worker1(linda::Handle handle) {
                        .stringOf(linda::RequirementType::Eq, "ocena")
                        .floatOf(linda::RequirementTypeFloat::More, 4.0)
                        .build();
-    std::cout << "AAAAAAA" << std::endl;
     tuple = handle.in(tuplePattern).value();
-    std::cout << "BBBBBBB" << std::endl;
     std::cout << "Worker1: got: " << std::get<std::string>(tuple.values()[0]) << ", "
               << std::get<float>(tuple.values()[1]) << std::endl;
 
-    handle.close();
     std::cout << "Worker1: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 void worker2(linda::Handle handle) {
@@ -67,8 +65,8 @@ void worker2(linda::Handle handle) {
     tuple = linda::Tuple::Builder().String("ocena").Float(5.0).build();
     handle.out(tuple);
 
-    handle.close();
     std::cout << "Worker2: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 void worker3(linda::Handle handle) {
@@ -80,8 +78,9 @@ void worker3(linda::Handle handle) {
     auto tuple = handle.in(tuplePattern).value();
     std::cout << "Worker3: got: " << std::get<int>(tuple.values()[0]) << ", " << std::get<int>(tuple.values()[1])
               << std::endl;
-    handle.close();
+
     std::cout << "Worker3: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 void worker4(linda::Handle handle) {
@@ -93,8 +92,9 @@ void worker4(linda::Handle handle) {
     auto tuple = handle.in(tuplePattern).value();
     std::cout << "Worker4: got: " << std::get<int>(tuple.values()[0]) << ", " << std::get<int>(tuple.values()[1])
               << std::endl;
-    handle.close();
+
     std::cout << "Worker4: Finished" << std::endl;
+    std::flush(std::cout);
 }
 
 int main() {
@@ -102,6 +102,7 @@ int main() {
         std::vector({std::function(worker1), std::function(worker2), std::function(worker3), std::function(worker4)}));
     std::cout << "Starting lindaServer" << std::endl;
     ls.start();
+
     std::cout << "lindaServer closed" << std::endl;
     return 0;
 }
