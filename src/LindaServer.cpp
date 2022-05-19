@@ -15,7 +15,7 @@
 #include <sys/poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#define CREATE_PROCESS_FD 434
+
 
 namespace linda
 {
@@ -101,10 +101,12 @@ void Server::removeDeadWorkers() {
 std::vector<int> Server::waitForRequests() {
     std::vector<pollfd> pollfds;
     for (auto &wh : worker_handles_) {
-        pollfd pfd;
-        pfd.fd     = wh.second.in_pipe;
-        pfd.events = POLLIN;
-        pollfds.emplace_back(pfd);
+        if (!wh.second.closed) {
+            pollfd pfd;
+            pfd.fd     = wh.second.in_pipe;
+            pfd.events = POLLIN;
+            pollfds.emplace_back(pfd);
+        }
     }
 
     int timeout  = findEarliestTimeout();
@@ -118,12 +120,15 @@ std::vector<int> Server::waitForRequests() {
             if (pfd.revents & POLLERR) {
                 logger_.log() << __FUNCTION__ << " Got POLLERR from file descriptor = " << std::to_string(pfd.fd)
                               << std::endl;
+                worker_handles_[pfd.fd].closed = true;
             } else if (pfd.revents & POLLHUP) {
                 logger_.log() << __FUNCTION__ << " Got POLLHUP from file descriptor = " << std::to_string(pfd.fd)
                               << std::endl;
+                worker_handles_[pfd.fd].closed = true;
             } else if (pfd.revents & POLLNVAL) {
                 logger_.log() << __FUNCTION__ << " Got POLLINVAL from file descriptor = " << std::to_string(pfd.fd)
                               << std::endl;
+                worker_handles_[pfd.fd].closed = true;
             } else if (pfd.revents & POLLIN) {
                 logger_.log() << __FUNCTION__ << " Got request from file descriptor = " << std::to_string(pfd.fd)
                               << std::endl;
@@ -235,7 +240,6 @@ int Server::findEarliestTimeout() {
         }
     }
     if (earliest == LONG_LONG_MAX) {
-        logger_.log() << __FUNCTION__ << " Earliest timeout = -1\n";
         return -1;
     } else {
         logger_.log() << __FUNCTION__ << " Earliest timeout = " << std::to_string(std::max(earliest - getNowMs(), 0LL))

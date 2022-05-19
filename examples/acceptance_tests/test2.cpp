@@ -35,7 +35,7 @@ void worker1(linda::Handle handle) {
 }
 
 void worker2(linda::Handle handle) {
-    std::cout << "Worker2: Waits for (string:*, 'string:ma', int:*, string:'koty)" << std::endl;
+    std::cout << "Worker2: Waits for (string:*, 'string:ma', int:*, string:'koty')" << std::endl;
     linda::TuplePattern tuplePattern = linda::TuplePattern::Builder()
                                            .anyString()
                                            .stringOf(linda::RequirementType::Eq, "ma")
@@ -98,8 +98,7 @@ void worker4(linda::Handle handle) {
 }
 
 int main() {
-    auto ls = linda::Server(
-        std::vector({std::function(worker1), std::function(worker2), std::function(worker3), std::function(worker4)}));
+    auto ls = linda::Server({worker1, worker2, worker3, worker4});
     std::cout << "Starting lindaServer" << std::endl;
     ls.start();
 
