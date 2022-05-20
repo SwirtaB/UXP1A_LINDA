@@ -237,8 +237,6 @@ Część pierwsza znajduje się w folderach include oraz src, zawierają one odp
 
 Druga część projektu znajduje się w folderze examples. Znajduje się tam kilka prostych przykładów użycia biblioteki oraz testy akceptacyjne. Testy jednostkowe znajdują się w folderze test.
 
-Folder reports zawiera dokumentacje projektu.
-
 ## Budowanie projektu
 W celu zbudowania biblioteki należy wywołać w terminalu:
 ```
@@ -386,21 +384,22 @@ na zasób, który ma dostarczyć inny użytkownik). Programy realizujące scenar
 Test zaimplementowany jest w pliku test1.cpp i symuluje on prostą interakcję między dwoma klientami. Pierwszy klient wstawia (out) do przestrzeni krotek krotke, na którą oczekuje (in) drugi klient. Klienci wypisują na standardowe wyjście przeprowadzane operacje.
 </p>
 
-#### Wyniki
+#### Wyniki\
 Test zakończył się powodzeniem. Krotka została poparwnie wtsawiona do przestrzeni i odczytana przez drugiego klienta.
 
 <a id="test2"></a>
 
 ### Test2 - wzajemne zależności
 Test zaimplementowany jest w pliku test2.cpp i symuluje bardziej złożoną interakcję miedzy czterema klientami.
- * Klient_1 - wstawia (out) krotkę ("Ala", "ma", 2, "koty"), następnie oczekuje (in) na krotkę (int:1, int:2), po czym oczekuje (in) na krotkę (string:'ocena', float:>4.0) i po jej otrzymaniu kończy działanie.
- * Klient_2 - oczekuje (in) na krotkę (string:\*, string:"ma", int:\*, string:"koty"), wstawia (out) pięć krotek: (1, 2), (1, 2), (1, 2), (3, 4), (5, 6), następnie zostaje uśpiony na 10 sekund. Po wznowieniu wstawia (out) krotkę ("ocena", 5.0) i kończy działanie.
- * Klient_3 - oczekuje (in) na krotkę (int:1, int:<3) po otrzymaniu której kończy działanie.
- * Klient_4 - oczekuje (in) na krotkę (int:<=1, int:2) po otrzymaniu której kończy działanie.
+
+* Klient_1 - wstawia (out) krotkę ("Ala", "ma", 2, "koty"), następnie oczekuje (in) na krotkę (int:1, int:2), po czym oczekuje (in) na krotkę (string:'ocena', float:>4.0) i po jej otrzymaniu kończy działanie.
+* Klient_2 - oczekuje (in) na krotkę (string:\*, string:"ma", int:\*, string:"koty"), wstawia (out) pięć krotek: (1, 2), (1, 2), (1, 2), (3, 4), (5, 6), następnie zostaje uśpiony na 10 sekund. Po wznowieniu wstawia (out) krotkę ("ocena", 5.0) i kończy działanie.
+* Klient_3 - oczekuje (in) na krotkę (int:1, int:<3) po otrzymaniu której kończy działanie.
+* Klient_4 - oczekuje (in) na krotkę (int:<=1, int:2) po otrzymaniu której kończy działanie.
 
 Jak widać Klient_1 wstawia krotkę na którą oczekuje Klient_2, ten z kolei wstawia krotki na które oczekuje Klient_1, Klient_3 i Klient_4. 
 
-#### Wyniki
+#### Wyniki\
 <p align="justify">
 Test ten z początku kończył się powodzeniem. Po dodaniu do projektu modułu loggera zaczął się nieprzewidywalnie zawieszać. 
 Dzięki temu zlokalizowaliśmy błąd związany z tym, że metoda out pierwotnie nie wymagała potwierdzenia ze strony serwera. Gdy klient wykonał out i zakończył się mogło dojść do sytuacji w której pipe zostanie zamknięty zanim serwer odczyta z niego wartość. Jest to poważny błąd logiczny w naszym systemie, który naprawiliśmy dodając potwierdzenie dla operacji out. 
@@ -409,12 +408,13 @@ Dzięki temu zlokalizowaliśmy błąd związany z tym, że metoda out pierwotnie
 ### Test3 - duże obciążenie
 Test zaimplementowany jest w pliku test3.cpp i symuluje duże obciążenia serwera, oraz testuje działanie timeout'ów.
 W scenariuszu występuję czterech klientów:
+
 * Klient_1 - wstawia (out) krotkę ("pi", 3.14159265359, "e", 2.71828182846), następnie usupia na 10 sekund. Po obudzeniu konsumuje tę krotkę i znowu usypia na 10 sekund. Po ponownym obudzeniu wstawia krotkę ("exit", 0) i kończy działanie.
 * Klient_2, Klient_3 i Klient_4 wykonują te same operacje - odczytuje krotke ("pi", 3.14159265359, "e", 2.71828182846) w pętli z timeoutem 40 ms. Po wystąpieniu timeoutu oczekuje (read) na krotkę (string:"exit", int:0) po czym kończy działanie.
 
 Ze względu na dużą wydajność serwera, plik log'u z tetestu 3 może mieć rozmiar rzędu kilkudziesięciu do kilkuset megabajtów.
 
-#### Wyniki
+#### Wyniki\
 <p align="justify">
 Podobnie jak w przypadku <a href="#test2">Test2</a>, po dodaniu modułu loggera test ten zapętlał się. Przyczyna tego zjawiska była identyczna i została rozwiązania.
 </p>
