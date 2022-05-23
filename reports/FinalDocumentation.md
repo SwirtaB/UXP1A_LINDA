@@ -333,12 +333,18 @@ Aby użytkownik mógł nadzorować działanie serwera, jego kolejne podejmowane 
 
 ```
 2022-5-19 9:21:19:158 [INFO] startLinda Server starting
-2022-5-19 9:21:19:158 [INFO] spawnWorkers Spawning worker : in_pipe = 4, out_pipe = 7, pid = 5010
-2022-5-19 9:21:19:161 [INFO] waitForRequests Got request from file descriptor = 4
-2022-5-19 9:21:19:161 [INFO] collectRequests Collecting request from file descriptor = 4
-2022-5-19 9:21:19:161 [INFO] completeRequest Completing OUT request from file descriptor = 4 with schema = s, and values = Hello example! | 
-2022-5-19 9:21:19:161 [INFO] answerRequest Erasing request from requests_ list for file descriptor = 4
-2022-5-19 9:21:19:161 [INFO] answerRequest Answering request from file descriptor = 4 to file descriptor 7
+2022-5-19 9:21:19:158 [INFO] spawnWorkers Spawning worker 
+: in_pipe = 4, out_pipe = 7, pid = 5010
+2022-5-19 9:21:19:161 [INFO] waitForRequests Got request 
+from file descriptor = 4
+2022-5-19 9:21:19:161 [INFO] collectRequests Collecting request 
+from file descriptor = 4
+2022-5-19 9:21:19:161 [INFO] completeRequest Completing OUT request 
+from file descriptor = 4 with schema = s, and values = Hello example! | 
+2022-5-19 9:21:19:161 [INFO] answerRequest Erasing request 
+from requests_ list for file descriptor = 4
+2022-5-19 9:21:19:161 [INFO] answerRequest Answering request 
+from file descriptor = 4 to file descriptor 7
 
 ```
 
@@ -367,7 +373,7 @@ Wykorzystane biblioteki:
 
 ## Testowanie
 <p align="justify">
-Poprawność implementacji testujemy z użyciem testów jednostkowych, które pokrywają wszystkei kluczowe funkcje rozwiązania. Pozwoliły one na sparwną 
+Poprawność implementacji testujemy z użyciem testów jednostkowych, które pokrywają wszystkie kluczowe funkcje rozwiązania. Pozwoliły one na sprawną 
 pracę i szybkie wyłapywanie błędów implementacyjnych, które pojawiały się przy wprowadzaniu nowych funkcjonalności. W momencie oddania projektu 
 wszystkei testy jednostkowe kończyły się powodzeniem.
 </p>
