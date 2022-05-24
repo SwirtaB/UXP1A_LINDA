@@ -174,7 +174,7 @@ tworzy procesy potomne, którym przekazuje wcześniej przygotowane potoki. Po pr
 
 ### Przetwarzanie żądań przez linda::Server
 <p align="justify">
-Proces koordynujący po uruchomieniu procesów potomnych przechodzi w tryb pracy serwera. Tryb ten realizowany jest poprzez pętlę nieskończoną
+Proces koordynujący po uruchomieniu procesów potomnych przechodzi w tryb pracy serwera. Tryb ten realizowany jest poprzez pętlę z warunkiem stopu (zakończenie wszystkich procesów potomnych)
 , w której serwer oczekuje na wiadomości od klientów. By wyeliminować aktywne oczekiwanie korzystamy z funkcji <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll(2)</a>.
 Gdy klient wyśle do serwera żądanie ten dokłada je do wewnętrznej kolejki FIFO i rozpoczyna obsługę. 
 </p>
@@ -264,7 +264,7 @@ Programy wykonywalne zostną zbudowane w folderze **bin**.
 
 ## Interfejs użytkownika
 
-System udostępniany jest użytkownikowi w formie biblioteki. Zawiera ona klasę serwera <i>Linda</i>, która pozwala na uruchomienie systemu. Aby uruchomić system użytkownik musi podać listę funkcji realizujących procesy potomne. Funkcje te mają dostęp do przestrzeni krotek poprzez przekazywany im argument. Uruchomienie systemu powoduje utworzenie procesów potomnych i przejście w tryb obsługi przestrzeni krotek. Zakończenie wykonania następuje gdy wszystkie procesy potomne zakończą działanie.
+System udostępniany jest użytkownikowi w formie biblioteki. Zawiera ona klasę serwera <i>Linda</i>, która pozwala na uruchomienie systemu. Aby uruchomić system użytkownik musi podać listę funkcji realizujących procesy potomne. Funkcje te mają dostęp do przestrzeni krotek poprzez przekazywany im obiekt typu `linda::Handle`. Uruchomienie systemu powoduje utworzenie procesów potomnych i przejście w tryb obsługi przestrzeni krotek. Zakończenie wykonania następuje gdy wszystkie procesy potomne zakończą działanie.
 
 ### Incializacja systemu 
 
@@ -357,7 +357,7 @@ Serwer oczekuje na nadchodzące zapytania z wykorzystaniem funkcji systemowej [`
 
 ### Zamykanie serwera po zakończeniu "pracowników" (waitpid)
 
-W celu eleminacji przypadku w którym serwer zawiesza się w oczekiwaniu na nadchodzące zapytania od zakończonych "pracowników", odbieramy ich status przy pomocy [`waitpid(3)`](https://linux.die.net/man/2/waitpid) (z ustawioną opcją `WNOHANG`) wewnątrz funkcji `void Server::removeDeadWorkers()` oraz pozbywamy się ich z puli monitorowanych procesów. Serwer kończy działanie, jeżeli nie zostanie żaden z utworzonych przez niego przy procesów.
+W celu eleminacji przypadku w którym serwer zawiesza się w oczekiwaniu na nadchodzące zapytania od zakończonych "pracowników", odbieramy ich status przy pomocy [`waitpid(3)`](https://linux.die.net/man/2/waitpid) (z ustawioną opcją `WNOHANG`) wewnątrz funkcji `void Server::removeDeadWorkers()` oraz pozbywamy się ich z puli monitorowanych procesów. Serwer kończy działanie, jeżeli nie zostanie żaden z utworzonych przez niego procesów.
 
 
 ## Szczegóły implementacji i używane biblioteki
