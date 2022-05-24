@@ -66,7 +66,7 @@ Użytkownikowi biblioteki udostępnione są poniższe funkcjonalności:
 
 ### linda::Server
 <p align="justify">
-Biblioteka udostępnia programiście klasę <b><i>linda::Server</i></b>, która to realizuje wieloprocesową komunikację. Posiada wewnętrznie instancję przestrzeni krotek i podczas konstrukcji przyjmuje wskazania na funkcje, które zostaną uruchomione jako osobne procesy.
+Biblioteka udostępnia programiście klasę <b><i>linda::Server</i></b>, która to realizuje wieloprocesową komunikację. Przechowuje instancję przestrzeni krotek jako prywatny atrybut i podczas konstrukcji przyjmuje wskazania na funkcje, które zostaną uruchomione jako osobne procesy.
 W momencie uruchomienia komunikacji, nastąpi utworzenie procesów potomnych, a następnie proces wywołujący przejdzie w tryb pracy serwera. Korzystając z funkcji <a href="https://man7.org/linux/man-pages/man2/poll.2.html">poll(2)</a>, serwer oczekuje na komunikaty od procesów potomnych i realizuje ich żądania w przestrzeni krotek. 
 Klasa udostępnia tylko jedną publiczną metodę:
 </p> 
@@ -219,7 +219,7 @@ pełnej dokładności czasowej, uważamy brak takiej gwarancji w naszej bibliote
 ## Podział na moduły
 * LindaServer - realizuje koordynatora przestrzeni krotek. Tworzy przestrzeń krotek i uruchamia procesy, które chcą z niej korzystać. Implementuje serwer obsługujący żądania wykonywania operacji języka Linda wysyłane przez utworzone procesy.
 * LindaHandle - realizuje obiekt dostępowy do przestrzeni krotek. Obiekt ten posiada interfejs języka Linda i jest wykorzystywany przez procesy korzystające z przestrzeni krotek. Implementuje operacje języka Linda przez wysyłanie żądań do koordynatora przestrzeni krotek.
-* LindaTuple - zawiera implementacje struktur reprezentujących krotki i wzorce krotek, oraz operacje pozwalające na serializację i deserializację ich.
+* LindaTuple - zawiera implementacje struktur reprezentujących krotki i wzorce krotek, oraz operacje pozwalające na ich serializację i deserializację.
 * LindaTupleSpace - realizuje przestrzeń krotek. Posiada metody modyfikujące przestrzeń odpowiadające operacjom języka Linda.
 * Moduł testowy - zawiera testy jednostkowe i przykładowe programy korzystające z biblioteki.
 
@@ -328,7 +328,7 @@ void function(linda::Handle handle) {
 
 ## Logger
 <p align="justify">
-Aby użytkownik mógł nadzorować działanie serwera, jego kolejne podejmowane kroki są zapisywane w plikach dziennika. Kolejne pliki tworzone są w folderze logFiles. Każdy taki plik dostaje jako nazwę datę uruchomienia serwera. W tak stworzonym pliku zapisywane są kolejne ważne z punktu widzenia działania serwera zdarzenia aż do jego wyłączenia. Gdy dany plik już istnieje kolejne logi są dopisywane do końca pliku. Do tych zapisów służy klasa Logger z metodą log(). Metoda ta udostępnia strumień związany z plikiem dziennika aktualnie wykorzystywanego do rejestracji działań serwera. Poniżej znajduje się przykładowa seria zapisów logów:
+Aby użytkownik mógł nadzorować działanie serwera wykonywane przez serwer akcje są zapisywane w pliku dziennika. Plik tworzony jest w folderze logFiles. Każdy taki plik dostaje jako nazwę datę uruchomienia serwera. W tak stworzonym pliku zapisywane są kolejne ważne z punktu widzenia działania serwera zdarzenia aż do jego wyłączenia. Gdy dany plik już istnieje kolejne logi są dopisywane do końca pliku. Do tych zapisów służy klasa Logger z metodą log(). Metoda ta udostępnia strumień związany z plikiem dziennika aktualnie wykorzystywanego do rejestracji działań serwera. Poniżej znajduje się przykładowa seria zapisów logów:
 </p>
 
 ```
@@ -380,7 +380,7 @@ wszystkei testy jednostkowe kończyły się powodzeniem.
 
 <p align="justify">
 Poprawność działania systemu próbujemy weryfikować testami akceptacyjnymi. Ze względu, iż zbudowanie interaktywnej aplikacji klienckiej jest 
-skomplikowane w realizowanym przez nas wariancie, posłużyliśmy się zestawem funkcji, które realizują scenariusze testowe. Scenariusze te realizują 
+skomplikowane w realizowanym przez nas wariancie, posłużyliśmy się zestawem programów, które realizują scenariusze testowe. Scenariusze te realizują 
 pracę wielu klientów na wspólnej przestrzeni krotek, a każdy z nich zakłada inny poziom interakcji między symulowanymi użytkownikami (np. oczekiwanie 
 na zasób, który ma dostarczyć inny użytkownik). Programy realizujące scenariusze zakończą się tylko w przypadku ich poprawnego wykonania. Jeżeli dany test się nie zakończy lub zakończy się w wyniku wyjątku, oznacza to niezaliczenie danego scenariusza. W ramach procesu testowania dostarczone zostały trzy scenariusze, dostępne w folderze examples/acceptance_tests.
 </p>
@@ -403,7 +403,7 @@ Test zaimplementowany jest w pliku test2.cpp i symuluje bardziej złożoną inte
 * Klient_3 - oczekuje (in) na krotkę (int:1, int:<3) po otrzymaniu której kończy działanie.
 * Klient_4 - oczekuje (in) na krotkę (int:<=1, int:2) po otrzymaniu której kończy działanie.
 
-Jak widać Klient_1 wstawia krotkę na którą oczekuje Klient_2, ten z kolei wstawia krotki na które oczekuje Klient_1, Klient_3 i Klient_4. 
+Jak widać Klient_1 wstawia krotkę na którą oczekuje Klient_2, ten z kolei wstawia krotki na które oczekują Klient_1, Klient_3 i Klient_4. 
 
 #### Wyniki\
 <p align="justify">
@@ -415,7 +415,7 @@ Dzięki temu zlokalizowaliśmy błąd związany z tym, że metoda out pierwotnie
 Test zaimplementowany jest w pliku test3.cpp i symuluje duże obciążenia serwera, oraz testuje działanie timeout'ów.
 W scenariuszu występuję czterech klientów:
 
-* Klient_1 - wstawia (out) krotkę ("pi", 3.14159265359, "e", 2.71828182846), następnie usupia na 10 sekund. Po obudzeniu konsumuje tę krotkę i znowu usypia na 10 sekund. Po ponownym obudzeniu wstawia krotkę ("exit", 0) i kończy działanie.
+* Klient_1 - wstawia (out) krotkę ("pi", 3.14159265359, "e", 2.71828182846), następnie usypia się na 10 sekund. Po obudzeniu konsumuje tę krotkę i znowu usypia na 10 sekund. Po ponownym obudzeniu wstawia krotkę ("exit", 0) i kończy działanie.
 * Klient_2, Klient_3 i Klient_4 wykonują te same operacje - odczytuje krotke ("pi", 3.14159265359, "e", 2.71828182846) w pętli z timeoutem 40 ms. Po wystąpieniu timeoutu oczekuje (read) na krotkę (string:"exit", int:0) po czym kończy działanie.
 
 Ze względu na dużą wydajność serwera, plik log'u z tetestu 3 może mieć rozmiar rzędu kilkudziesięciu do kilkuset megabajtów.
