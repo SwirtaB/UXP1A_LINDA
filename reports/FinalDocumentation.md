@@ -101,7 +101,7 @@ przez <b><i>linda::Server</i></b> i przekazany procesowi potomnemu. Klasa udostÄ
 ![response](figures/response.png)
 
 - rozmiar - rozmiar reszty wiadomoÅ›ci: `int`
-- typ - rodzaj odpowiedzi: `enum ResponseType: char { Result, Timeout }`
+- typ - rodzaj odpowiedzi: `enum ResponseType: char { Result, Done, Timeout }`
 - dla `Result` dodatkowo krotka: `Tuple`
 
 #### Krotka (Tuple)\
