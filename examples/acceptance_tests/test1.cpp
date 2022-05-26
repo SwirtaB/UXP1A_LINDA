@@ -28,7 +28,7 @@ void worker2(linda::Handle handle) {
 }
 
 int main() {
-    auto lindaServer = linda::Server({std::function(worker1), std::function(worker2)});
+    auto lindaServer = linda::Server({worker1, worker2});
     lindaServer.start();
     return 0;
 }

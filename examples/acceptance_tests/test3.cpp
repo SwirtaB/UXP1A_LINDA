@@ -118,8 +118,7 @@ void worker4(linda::Handle handle) {
 }
 
 int main() {
-    auto ls = linda::Server(
-        std::vector({std::function(worker1), std::function(worker2), std::function(worker3), std::function(worker4)}));
+    auto ls = linda::Server({worker1, worker2, worker3, worker4});
     std::cout << "Starting lindaServer" << std::endl;
     ls.start();
 

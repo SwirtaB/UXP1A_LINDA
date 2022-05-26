@@ -25,6 +25,7 @@ class Server
         int in_pipe;
         int out_pipe;
         int pid;
+        bool closed = false;
     };
 
     Logger                                         logger_;
