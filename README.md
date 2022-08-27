@@ -6,7 +6,7 @@
 * Górniak Daniel
 * Zieliński Jakub
 
-Data przekazania dokumentacji wstępnej: 25.05.2022
+Data przekazania dokumentacji końcowej: 25.05.2022
 
 ## Temat projektu
 <p align="justify">
